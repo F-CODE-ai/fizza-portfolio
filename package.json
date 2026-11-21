@@ -1,0 +1,36 @@
+{
+  "name": "fizza-portfolio",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Fizza Aman - interactive 3D web portfolio (Web 3D Programming, NED UET)",
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "check:secrets": "node scripts/check-secrets.mjs",
+    "check:budget": "node scripts/check-budget.mjs",
+    "check:all": "npm run test && npm run build && npm run check:budget && npm run check:secrets"
+  },
+  "dependencies": {
+    "@fontsource/pacifico": "5.3.0",
+    "@fontsource/quicksand": "5.3.0",
+    "gsap": "3.15.1",
+    "nodemailer": "10.6.1",
+    "three": "0.187.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@ffmpeg-installer/ffmpeg": "1.1.0",
+    "@tailwindcss/vite": "4.3.5",
+    "pdf-lib": "1.17.1",
+    "sharp": "0.35.5",
+    "tailwindcss": "4.3.5",
+    "vite": "8.3.8",
+    "vitest": "5.1.1"
+  }
+}

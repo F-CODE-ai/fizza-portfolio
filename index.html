@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fizza Aman | AI & 3D Developer</title>
+    <meta name="description" content="Fizza Aman, CS&IT student at NED University Karachi. AI, computer vision, multi-agent systems and 3D web. Welcome to my pink travel kitchen." />
+    <meta name="theme-color" content="#c2185b" />
+    <meta property="og:title" content="Fizza Aman | AI & 3D Developer" />
+    <meta property="og:description" content="AI, computer vision and 3D web, served from a pink travel kitchen." />
+    <meta property="og:image" content="/img/hero-1600.webp" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body class="bg-petal text-plum font-body antialiased">
+    <a href="#main" class="skip-link">Skip to content</a>
+
+    <header class="site-header" id="top">
+      <nav class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3" aria-label="Main">
+        <a href="#top" class="font-display text-2xl text-barbie">Fizza's Kitchen</a>
+        <button id="nav-toggle" class="nav-toggle md:hidden" aria-expanded="false" aria-controls="nav-links">Menu</button>
+        <ul id="nav-links" class="nav-links">
+          <li><a href="#about">About</a></li>
+          <li><a href="#promo">Promo</a></li>
+          <li><a href="#skills">Skills</a></li>
+          <li><a href="#projects">Projects</a></li>
+          <li><a href="#experience">Experience</a></li>
+          <li><a href="#education">Education</a></li>
+          <li><a href="#contact">Contact</a></li>
+          <li><button id="music-toggle" class="chip-btn music-pill" type="button" aria-pressed="false" title="Toggle girly background music">🎵 Play Music</button></li>
+          <li><button id="theme-toggle" class="btn-icon" type="button" aria-label="Toggle dark and light theme" title="Toggle dark/light theme">🌙</button></li>
+          <li><button id="explore-btn" class="btn btn-small" type="button" hidden>Explore 3D ✈</button></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main id="main">
+      <!-- HERO -->
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="mx-auto grid max-w-6xl items-center gap-10 px-5 py-16 md:grid-cols-2 md:py-24">
+          <div>
+            <p class="eyebrow">Welcome to my travel kitchen</p>
+            <h1 id="hero-title" class="font-display text-5xl leading-tight text-barbie md:text-6xl">Hi, I'm Fizza Aman</h1>
+            <p class="mt-4 text-xl font-semibold">AI &amp; 3D developer · BS CS&amp;IT at NED University · Karachi</p>
+            <p class="mt-4 text-lg">I cook up deep learning, computer vision and 3D experiences, with a pinch of pink and a passport full of ideas.</p>
+            <div class="mt-8 flex flex-wrap gap-3">
+              <a class="btn" href="#projects">See my recipes</a>
+              <a class="btn btn-ghost" href="#promo">Watch promo 🎬</a>
+              <a class="btn btn-ghost" href="/cv/Fizza-Aman-CV.pdf" download>Download CV</a>
+              <button id="explore-btn-hero" class="btn btn-ghost" type="button" hidden>Explore in 3D</button>
+            </div>
+          </div>
+          <div class="hero-stage reveal">
+            <picture class="hero-art">
+              <source type="image/webp" srcset="/img/hero-800.webp 800w, /img/hero-1600.webp 1600w" sizes="(min-width: 768px) 50vw, 100vw" />
+              <img src="/img/hero-800.webp" width="800" height="450" alt="Illustration of a pink floating island kitchen with a retro fridge covered in postcards, a recipe book, a globe and a suitcase" fetchpriority="high" />
+            </picture>
+            <div class="avatar-card" aria-label="3D Avatar Fizza (Chef Fizz)">
+              <p id="avatar-speech" class="avatar-speech" role="status" aria-live="polite">💬 "Hello! Hi! I'm Fizza — what are you searching about me? Click Talk or tap me!"</p>
+              <canvas id="avatar-canvas" width="260" height="280" aria-label="Interactive 3D avatar modeled after Fizza Aman"></canvas>
+              <div class="avatar-card-bar">
+                <span class="font-display text-barbie">Fizza (3D)</span>
+                <div class="flex gap-1">
+                  <button type="button" class="chip-btn" data-avatar-pose="wave">Wave 👋</button>
+                  <button type="button" class="chip-btn" data-avatar-pose="talk">Talk 💬</button>
+                  <button type="button" class="chip-btn" data-avatar-pose="nod">Nod ✨</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PROMO VIDEO (Module 3) -->
+      <section id="promo" class="section section-tint" aria-labelledby="promo-title">
+        <div class="section-inner">
+          <p class="eyebrow">35-second kitchen tour</p>
+          <h2 id="promo-title" class="section-title">Promo video</h2>
+          <div class="card reveal">
+            <div class="promo-stage">
+              <canvas id="promo-canvas" class="promo-canvas" width="1280" height="720" aria-label="Animated 35-second promotional video for Fizza Aman"></canvas>
+              <video id="promo-video" class="sr-only" controls preload="metadata" poster="/img/hero-1600.webp" width="1280" height="720">
+                <source src="/video/fizza-promo.mp4" type="video/mp4" />
+                <track kind="captions" src="/video/fizza-promo.vtt" srclang="en" label="English" default />
+              </video>
+              <div class="promo-bar">
+                <button id="promo-play" type="button" class="btn btn-small">▶ Play 35s Promo</button>
+                <button id="promo-mute" type="button" class="btn-icon" aria-pressed="false" title="Toggle background music">🎵</button>
+                <div class="promo-progress" role="progressbar" aria-valuemin="0" aria-valuemax="35" aria-valuenow="0">
+                  <div id="promo-fill" class="promo-fill"></div>
+                </div>
+                <span id="promo-time" class="text-xs font-bold">0:00 / 0:35</span>
+                <a class="chip-btn" href="/video/fizza-promo.mp4" download>Download MP4 ⬇</a>
+              </div>
+            </div>
+            <p class="meta mt-3">Module 3 promotional showcase (35s) — introducing Fizza Aman, AI &amp; 3D engineering skills, key recipes (Sentinel AI, AttendX, TALEEM360), and achievements, with licensed procedural WebAudio background music.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ABOUT -->
+      <section id="about" class="section" aria-labelledby="about-title">
+        <div class="section-inner">
+          <p class="eyebrow">The recipe book</p>
+          <h2 id="about-title" class="section-title">About me</h2>
+          <div class="grid gap-8 md:grid-cols-3">
+            <div class="card md:col-span-2 reveal">
+              <p>I'm a BS Computer Science &amp; Information Technology student at <strong>NED University of Engineering and Technology</strong>, graduating in September 2027 (CGPA 3.28 / 4.00).</p>
+              <p class="mt-3">I work where AI meets 3D: deep learning for medical imaging, computer vision, multi-agent LLM systems and AR/VR. I like building things people can actually see and use.</p>
+              <p class="mt-3">I'm looking for <strong>internships and junior roles</strong> in AI/ML engineering, computer vision and 3D/AR web development.</p>
+            </div>
+            <ul class="card fact-list reveal" aria-label="Quick facts">
+              <li><span aria-hidden="true">📍</span> Karachi, Pakistan</li>
+              <li><span aria-hidden="true">🗣️</span> English (fluent) · French (basic)</li>
+              <li><span aria-hidden="true">🍳</span> Cooking</li>
+              <li><span aria-hidden="true">✈️</span> Travelling</li>
+              <li><span aria-hidden="true">🏸</span> Badminton</li>
+              <li><span aria-hidden="true">😴</span> Professional napper</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- SKILLS -->
+      <section id="skills" class="section section-tint" aria-labelledby="skills-title">
+        <div class="section-inner">
+          <p class="eyebrow">The spice rack</p>
+          <h2 id="skills-title" class="section-title">Skills</h2>
+          <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="jar reveal"><h3>Languages</h3><ul class="chips"><li>Python</li><li>TypeScript</li><li>JavaScript</li><li>C</li><li>C++</li></ul></div>
+            <div class="jar reveal"><h3>AI &amp; ML</h3><ul class="chips"><li>Deep learning</li><li>LangGraph multi-agent</li><li>Computer vision</li><li>ArcFace</li><li>MediaPipe</li><li>BERT NLP</li><li>LoRA / PEFT</li><li>sherpa-onnx ASR</li></ul></div>
+            <div class="jar reveal"><h3>Frameworks</h3><ul class="chips"><li>PyTorch</li><li>TensorFlow</li><li>FastAPI</li><li>Flask</li><li>React</li><li>Electron</li><li>three.js</li></ul></div>
+            <div class="jar reveal"><h3>3D &amp; tools</h3><ul class="chips"><li>Unity</li><li>Unreal Engine</li><li>Blender</li><li>Git &amp; GitHub</li><li>Docker</li><li>WebSockets</li><li>SQLite</li></ul></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PROJECTS -->
+      <section id="projects" class="section" aria-labelledby="projects-title">
+        <div class="section-inner">
+          <p class="eyebrow">Postcards on the fridge</p>
+          <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+            <h2 id="projects-title" class="section-title !mb-0">Projects</h2>
+            <div class="flex flex-wrap items-center gap-2" role="search" aria-label="Filter projects">
+              <div class="flex flex-wrap gap-1.5" role="group" aria-label="Category filter">
+                <button type="button" class="filter-chip active" data-filter="all">All</button>
+                <button type="button" class="filter-chip" data-filter="ai">AI &amp; Agents</button>
+                <button type="button" class="filter-chip" data-filter="cv">Computer Vision</button>
+                <button type="button" class="filter-chip" data-filter="3d">3D &amp; AR/VR</button>
+                <button type="button" class="filter-chip" data-filter="web">Web &amp; API</button>
+              </div>
+              <label for="project-search" class="sr-only">Search projects</label>
+              <input id="project-search" type="search" placeholder="Search recipes…" class="search-input" maxlength="60" />
+            </div>
+          </div>
+          <div id="projects-grid" class="grid gap-8 md:grid-cols-2">
+            <article class="postcard reveal" data-tags="ai web" aria-labelledby="p-sentinel">
+              <p class="stamp">🏆 Winner showcase</p>
+              <h3 id="p-sentinel">Sentinel AI: live scam-call detection</h3>
+              <p class="meta">GIKI Advanced AI Bootcamp 2026 capstone · team of 3</p>
+              <dl>
+                <dt>The craving</dt><dd>Scam calls trick people in real time, before they realise it.</dd>
+                <dt>Ingredients</dt><dd>LangGraph (6 agents), FastAPI, WebSockets, React, Electron</dd>
+                <dt>My part</dt><dd>Owned frontend, UI and testing, including fixing a live microphone input bug.</dd>
+                <dt>Taste test</dt><dd>Presented to the GIKI Rector as a winning-project showcase.</dd>
+              </dl>
+              <a class="link" href="https://github.com/Hassan-Raza-Shaikh/Live-Scam-Calling-Detection" target="_blank" rel="noopener noreferrer">View code on GitHub</a>
+            </article>
+
+            <article class="postcard reveal" data-tags="cv ai" aria-labelledby="p-attendx">
+              <p class="stamp">👁️ Computer vision</p>
+              <h3 id="p-attendx">AttendX: face-recognition attendance</h3>
+              <p class="meta">Academic project · team of 2</p>
+              <dl>
+                <dt>The craving</dt><dd>Manual attendance is slow and easy to fake.</dd>
+                <dt>Ingredients</dt><dd>InsightFace / ArcFace (ResNet-50, 512-d), MediaPipe, FastAPI, Docker, SQLite, Gradio</dd>
+                <dt>Method</dt><dd>Blink liveness detection (EAR), wave-gesture check-out, multi-face spoof rejection.</dd>
+                <dt>Taste test</dt><dd>Designed for a real classroom of about 45 students.</dd>
+              </dl>
+              <a class="link" href="https://github.com/muhammadumerfarooqq/attendance-system" target="_blank" rel="noopener noreferrer">View code on GitHub</a>
+            </article>
+
+            <article class="postcard reveal" data-tags="3d" aria-labelledby="p-taleem">
+              <p class="stamp">🫀 AR / VR</p>
+              <h3 id="p-taleem">TALEEM360: AR STEM education</h3>
+              <p class="meta">Final year project · in progress</p>
+              <dl>
+                <dt>The craving</dt><dd>Students struggle to picture anatomy from flat textbook images.</dd>
+                <dt>Ingredients</dt><dd>AR, interactive 3D anatomical models (e.g. the human heart)</dd>
+                <dt>Status</dt><dd>Revising the demo and architecture after instructor feedback.</dd>
+              </dl>
+            </article>
+
+            <article class="postcard reveal" data-tags="web" aria-labelledby="p-sms">
+              <p class="stamp">🧑‍🎓 Internship</p>
+              <h3 id="p-sms">Student Management System</h3>
+              <p class="meta">NCAI internship capstone</p>
+              <dl>
+                <dt>Ingredients</dt><dd>Python, Flask, SQLite, REST API</dd>
+                <dt>Method</dt><dd>CRUD operations and API design, built and deployed during my AI internship.</dd>
+              </dl>
+              <a class="link" href="https://github.com/F-CODE-ai/student-management-system" target="_blank" rel="noopener noreferrer">View code on GitHub</a>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- EXPERIENCE -->
+      <section id="experience" class="section section-tint" aria-labelledby="experience-title">
+        <div class="section-inner">
+          <p class="eyebrow">The travel log</p>
+          <h2 id="experience-title" class="section-title">Experience</h2>
+          <ol class="timeline">
+            <li class="reveal">
+              <p class="when">Sep 2026 to present</p>
+              <h3>Undergraduate Research Assistant: medical imaging &amp; deep learning</h3>
+              <p class="meta">NED University · supervisor Dr. Usman Amjad · HEC/NRPU funded</p>
+              <ul class="bullets">
+                <li>Researching 3D deformable, featureless image registration to track chronic-wound progression over time.</li>
+                <li>Validating on BraTS-Reg (brain MRI with expert landmarks) and Skin3D / 3DBodyTex (textured 3D skin meshes), since no public wound-progression dataset exists.</li>
+                <li>Benchmarking registration accuracy across both datasets independently.</li>
+              </ul>
+            </li>
+            <li class="reveal">
+              <p class="when">Jul to Aug 2026</p>
+              <h3>Advanced AI Bootcamp: GIKI × SkyLabs</h3>
+              <p class="meta">Ghulam Ishaq Khan Institute · 8 weeks</p>
+              <ul class="bullets">
+                <li>LLM inference optimisation (Transformers vs vLLM on Qwen2.5-0.5B, Gemma-2B, TinyLlama).</li>
+                <li>LoRA / PEFT fine-tuning on DistilBERT; multi-agent systems with LangGraph.</li>
+                <li>Built Sentinel AI; co-hosted the closing and certificate ceremony.</li>
+              </ul>
+            </li>
+            <li class="reveal">
+              <p class="when">Jan to Mar 2026</p>
+              <h3>AI Intern</h3>
+              <p class="meta">National Center of Artificial Intelligence (NCAI), Karachi</p>
+              <ul class="bullets">
+                <li>Built and deployed a Student Management System with Flask and SQLite (CRUD, REST API).</li>
+              </ul>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <!-- EDUCATION + ACHIEVEMENTS -->
+      <section id="education" class="section" aria-labelledby="education-title">
+        <div class="section-inner">
+          <p class="eyebrow">Souvenirs</p>
+          <h2 id="education-title" class="section-title">Education &amp; achievements</h2>
+          <div class="grid gap-8 md:grid-cols-2">
+            <div class="card reveal">
+              <h3 class="card-title">🎓 NED University of Engineering and Technology</h3>
+              <p>BS Computer Science &amp; Information Technology</p>
+              <p class="meta">Karachi · expected Sep 2027 · CGPA 3.28 / 4.00</p>
+            </div>
+            <ul class="card fact-list reveal" aria-label="Achievements">
+              <li><span aria-hidden="true">🥉</span> 3rd place, departmental Game Development Competition (Unity)</li>
+              <li><span aria-hidden="true">🎤</span> Co-host, GIKI Advanced AI Bootcamp 2026 closing ceremony</li>
+              <li><span aria-hidden="true">🤝</span> Volunteer, ICONICS'24 international conference</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- CONTACT -->
+      <section id="contact" class="section section-tint" aria-labelledby="contact-title">
+        <div class="section-inner">
+          <p class="eyebrow">Send me a postcard</p>
+          <h2 id="contact-title" class="section-title">Contact</h2>
+          <div class="grid gap-8 md:grid-cols-5">
+            <form id="contact-form" class="card md:col-span-3" action="/api/contact" method="post" novalidate>
+              <div class="field"><label for="c-name">Your name</label><input id="c-name" name="name" type="text" autocomplete="name" required maxlength="80" /></div>
+              <div class="field"><label for="c-email">Your email</label><input id="c-email" name="email" type="email" autocomplete="email" required maxlength="120" /></div>
+              <div class="field"><label for="c-subject">Subject</label><input id="c-subject" name="subject" type="text" required minlength="2" maxlength="120" placeholder="Internship / Project inquiry" /></div>
+              <div class="field"><label for="c-message">Message</label><textarea id="c-message" name="message" rows="5" required minlength="10" maxlength="2000"></textarea></div>
+              <div class="hp" aria-hidden="true"><label for="c-website">Website</label><input id="c-website" name="website" type="text" tabindex="-1" autocomplete="off" /></div>
+              <div id="turnstile-slot"></div>
+              <button class="btn mt-2" type="submit">Send postcard 💌</button>
+              <p id="contact-status" class="mt-3" role="status" aria-live="polite"></p>
+            </form>
+            <div class="card md:col-span-2">
+              <h3 class="card-title">Other ways</h3>
+              <ul class="fact-list">
+                <li><span aria-hidden="true">✉️</span> <a class="link" href="mailto:fizzakhannna@gmail.com">fizzakhannna@gmail.com</a></li>
+                <li><span aria-hidden="true">💼</span> <a class="link" href="https://www.linkedin.com/in/fizza-aman-7984b8301" target="_blank" rel="noopener noreferrer">LinkedIn</a></li>
+                <li><span aria-hidden="true">💻</span> <a class="link" href="https://github.com/F-CODE-ai" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+                <li><span aria-hidden="true">📄</span> <a class="link" href="/cv/Fizza-Aman-CV.pdf" download>CV (PDF)</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="py-8 text-center text-sm">
+      <p>© <span id="year">2026</span> Fizza Aman · Made with three.js, Blender and a lot of chai ☕</p>
+    </footer>
+
+    <!-- RAG AI TWIN CHATBOT (Module 4 + Voice TTS + Citations) -->
+    <div id="chat-widget" class="chat-widget">
+      <button id="chat-fab" class="chat-fab" type="button" aria-expanded="false" aria-controls="chat-panel">
+        <span aria-hidden="true">👩‍🍳</span> Ask Chef Fizz AI
+      </button>
+      <section id="chat-panel" class="chat-panel" hidden aria-label="Chef Fizz AI twin chatbot">
+        <header class="chat-header">
+          <div>
+            <p class="font-display text-lg text-barbie">Chef Fizz · AI Twin</p>
+            <p class="text-xs opacity-80">RAG grounded on Fizza's portfolio with citations</p>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button id="chat-tts-toggle" class="btn-icon" type="button" aria-pressed="false" title="Toggle voice read-aloud">🔊</button>
+            <button id="chat-close" class="btn-icon" type="button" aria-label="Close chat">✕</button>
+          </div>
+        </header>
+        <div id="chat-log" class="chat-log" role="log" aria-live="polite">
+          <div class="chat-msg bot">
+            <p>Assalam-o-Alaikum &amp; Bonjour! I'm Chef Fizz, Fizza Aman's AI twin. Ask me about her AI research, Sentinel AI, AttendX, skills, or education!</p>
+          </div>
+        </div>
+        <div class="chat-quick">
+          <button type="button" class="chip-btn" data-q="What is Fizza researching at NED University?">NED research?</button>
+          <button type="button" class="chip-btn" data-q="How does Sentinel AI detect scam calls?">Sentinel AI?</button>
+          <button type="button" class="chip-btn" data-q="What are Fizza's technical skills?">Skills?</button>
+        </div>
+        <form id="chat-form" class="chat-form" novalidate>
+          <label for="chat-input" class="sr-only">Ask a question about Fizza</label>
+          <input id="chat-input" name="question" type="text" required maxlength="300" placeholder="Ask about projects, skills, research…" autocomplete="off" />
+          <button class="btn btn-small" type="submit">Ask</button>
+        </form>
+      </section>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

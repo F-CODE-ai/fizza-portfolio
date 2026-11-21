@@ -1,0 +1,28 @@
+# dependencies / build
+node_modules/
+dist/
+.vercel/
+coverage/
+
+# secrets - NEVER commit
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# private personal files (CV with phone number etc.)
+private/
+
+# large media - upload 4K renders to the submission portal separately
+*.mov
+*.avi
+*.blend1
+media/renders/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+*.log
