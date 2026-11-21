@@ -73,9 +73,9 @@ export function buildScene(scene) {
   scene.background = skyTexture();
   scene.fog = new THREE.Fog(0xffd9e6, 22, 48);
 
-  // Lights
-  scene.add(new THREE.HemisphereLight(0xfff0f6, 0xd36b9a, 1.6));
-  const sun = new THREE.DirectionalLight(0xffd6a5, 2.4);
+  // Lights - calibrated so 3D character and kitchen keep their rich pastel and tan/denim colors
+  scene.add(new THREE.HemisphereLight(0xfff0f6, 0xd36b9a, 1.25));
+  const sun = new THREE.DirectionalLight(0xffedd6, 1.65);
   sun.position.set(7, 12, 8);
   sun.castShadow = true;
   sun.shadow.mapSize.set(1024, 1024);

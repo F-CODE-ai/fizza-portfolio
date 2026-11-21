@@ -15,7 +15,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 BLEND_OUT = ROOT / "media" / "blender" / "chef-fizz.blend"
-GLB_OUT = ROOT / "public" / "models" / "chef-fizz.glb"
+GLB_OUT = ROOT / "media" / "blender" / "chef-fizz.glb"
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 
@@ -32,10 +32,10 @@ def make_mat(name, rgba, metallic=0.05, roughness=0.45):
 
 
 mat_skin = make_mat("Skin", (0.89, 0.70, 0.57, 1.0), 0.01, 0.58)
-mat_hair = make_mat("Hair", (0.23, 0.13, 0.09, 1.0), 0.05, 0.42)
-mat_plaid = make_mat("PlaidShirt", (0.79, 0.66, 0.52, 1.0), 0.0, 0.85)
-mat_denim = make_mat("DenimJeans", (0.35, 0.49, 0.65, 1.0), 0.0, 0.82)
-mat_sandal = make_mat("SandalLeather", (0.36, 0.21, 0.14, 1.0), 0.05, 0.55)
+mat_hair = make_mat("Hair", (0.20, 0.11, 0.07, 1.0), 0.05, 0.42)
+mat_plaid = make_mat("PlaidShirt", (0.55, 0.38, 0.24, 1.0), 0.0, 0.88)
+mat_denim = make_mat("DenimJeans", (0.18, 0.28, 0.44, 1.0), 0.0, 0.82)
+mat_sandal = make_mat("SandalLeather", (0.30, 0.17, 0.10, 1.0), 0.05, 0.55)
 mat_gold = make_mat("Gold", (0.92, 0.74, 0.30, 1.0), 0.78, 0.24)
 mat_cup_lid = make_mat("CupLidGreen", (0.11, 0.47, 0.34, 1.0), 0.05, 0.35)
 

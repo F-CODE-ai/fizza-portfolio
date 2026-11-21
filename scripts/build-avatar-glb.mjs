@@ -12,61 +12,83 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 
 // ---------------------------------------------------------------------------
 // 1. Procedural PBR PNG Textures (embedded directly inside GLB)
+// Sampled directly from Fizza's reference photo:
+//   - Rich caramel-tan base (#9e7347) with chocolate (#3d2617), hazelnut (#654327),
+//     slate-olive (#505a49), and warm ochre (#b58539) woven plaid checks (NO washed-out white/cream!)
+//   - Authentic medium-dark vintage indigo blue denim (#2c4566) with twill lines & gold stitching
+//   - Rich dark espresso / chestnut brown hair (#2a150c)
 // ---------------------------------------------------------------------------
 async function createPlaidTexturePNG() {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-    <rect width="512" height="512" fill="#ba916a"/>
-    <!-- Cream & ivory vertical/horizontal bands -->
-    <g opacity="0.78" fill="#f7efe6">
-      <rect x="0" y="0" width="28" height="512"/><rect x="128" y="0" width="28" height="512"/>
-      <rect x="256" y="0" width="28" height="512"/><rect x="384" y="0" width="28" height="512"/>
-      <rect x="0" y="0" width="512" height="28"/><rect x="0" y="128" width="512" height="28"/>
-      <rect x="0" y="256" width="512" height="28"/><rect x="0" y="384" width="512" height="28"/>
+    <!-- Rich warm golden-tan flannel base from photo -->
+    <rect width="512" height="512" fill="#9e7347"/>
+
+    <!-- Broad chocolate brown check bands (vertical & horizontal) -->
+    <g opacity="0.65" fill="#3d2617">
+      <rect x="0" y="0" width="48" height="512"/><rect x="128" y="0" width="48" height="512"/>
+      <rect x="256" y="0" width="48" height="512"/><rect x="384" y="0" width="48" height="512"/>
+      <rect x="0" y="0" width="512" height="48"/><rect x="0" y="128" width="512" height="48"/>
+      <rect x="0" y="256" width="512" height="48"/><rect x="0" y="384" width="512" height="48"/>
     </g>
-    <!-- Soft slate-blue checks matching reference plaid shirt -->
-    <g opacity="0.45" fill="#59738c">
-      <rect x="60" y="0" width="32" height="512"/><rect x="188" y="0" width="32" height="512"/>
-      <rect x="316" y="0" width="32" height="512"/><rect x="444" y="0" width="32" height="512"/>
-      <rect x="0" y="60" width="512" height="32"/><rect x="0" y="188" width="512" height="32"/>
-      <rect x="0" y="316" width="512" height="32"/><rect x="0" y="444" width="512" height="32"/>
+
+    <!-- Olive-slate secondary plaid bands matching reference shirt -->
+    <g opacity="0.55" fill="#4d5948">
+      <rect x="76" y="0" width="36" height="512"/><rect x="204" y="0" width="36" height="512"/>
+      <rect x="332" y="0" width="36" height="512"/><rect x="460" y="0" width="36" height="512"/>
+      <rect x="0" y="76" width="512" height="36"/><rect x="0" y="204" width="512" height="36"/>
+      <rect x="0" y="332" width="512" height="36"/><rect x="0" y="460" width="512" height="36"/>
     </g>
-    <!-- Fine cocoa accent threads -->
-    <g opacity="0.62" fill="#553c28">
-      <rect x="44" y="0" width="6" height="512"/><rect x="172" y="0" width="6" height="512"/>
-      <rect x="300" y="0" width="6" height="512"/><rect x="428" y="0" width="6" height="512"/>
-      <rect x="0" y="44" width="512" height="6"/><rect x="0" y="172" width="512" height="6"/>
-      <rect x="0" y="300" width="512" height="6"/><rect x="0" y="428" width="512" height="6"/>
+
+    <!-- Dark espresso intersecting crossing squares -->
+    <g opacity="0.80" fill="#24140b">
+      <rect x="0" y="0" width="48" height="48"/><rect x="128" y="0" width="48" height="48"/>
+      <rect x="256" y="0" width="48" height="48"/><rect x="384" y="0" width="48" height="48"/>
+      <rect x="0" y="128" width="48" height="48"/><rect x="128" y="128" width="48" height="48"/>
+      <rect x="256" y="128" width="48" height="48"/><rect x="384" y="128" width="48" height="48"/>
+      <rect x="0" y="256" width="48" height="48"/><rect x="128" y="256" width="48" height="48"/>
+      <rect x="256" y="256" width="48" height="48"/><rect x="384" y="256" width="48" height="48"/>
+      <rect x="0" y="384" width="48" height="48"/><rect x="128" y="384" width="48" height="48"/>
+      <rect x="256" y="384" width="48" height="48"/><rect x="384" y="384" width="48" height="48"/>
     </g>
-    <!-- Subtle warm blush micro-thread -->
-    <g opacity="0.24" fill="#d97f9c">
-      <rect x="108" y="0" width="3" height="512"/><rect x="236" y="0" width="3" height="512"/>
-      <rect x="364" y="0" width="3" height="512"/><rect x="492" y="0" width="3" height="512"/>
-      <rect x="0" y="108" width="512" height="3"/><rect x="0" y="236" width="512" height="3"/>
-      <rect x="0" y="364" width="512" height="3"/><rect x="0" y="492" width="512" height="3"/>
+
+    <!-- Warm ochre/amber accent pin-stripes -->
+    <g opacity="0.75" fill="#ba8c42">
+      <rect x="22" y="0" width="4" height="512"/><rect x="150" y="0" width="4" height="512"/>
+      <rect x="278" y="0" width="4" height="512"/><rect x="406" y="0" width="4" height="512"/>
+      <rect x="0" y="22" width="512" height="4"/><rect x="0" y="150" width="512" height="4"/>
+      <rect x="0" y="278" width="512" height="4"/><rect x="0" y="406" width="512" height="4"/>
+    </g>
+
+    <!-- Muted warm beige fine thread (subtle, non-white) -->
+    <g opacity="0.35" fill="#cbb79f">
+      <rect x="92" y="0" width="3" height="512"/><rect x="220" y="0" width="3" height="512"/>
+      <rect x="348" y="0" width="3" height="512"/><rect x="476" y="0" width="3" height="512"/>
+      <rect x="0" y="92" width="512" height="3"/><rect x="0" y="220" width="512" height="3"/>
+      <rect x="0" y="348" width="512" height="3"/><rect x="0" y="476" width="512" height="3"/>
     </g>
   </svg>`;
-  return sharp(Buffer.from(svg)).resize(256, 256).png({ palette: true, compressionLevel: 9 }).toBuffer();
+  return sharp(Buffer.from(svg)).resize(256, 256).png({ compressionLevel: 9 }).toBuffer();
 }
 
 async function createDenimTexturePNG() {
   let stripes = '';
   for (let i = 0; i < 512; i += 6) {
-    stripes += `<line x1="${i}" y1="0" x2="${i + 12}" y2="512" stroke="#3c5b7e" stroke-width="1.5" opacity="0.22"/>`;
+    stripes += `<line x1="${i}" y1="0" x2="${i + 14}" y2="512" stroke="#1c2e47" stroke-width="2" opacity="0.32"/>`;
   }
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
     <defs>
       <linearGradient id="wash" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0%" stop-color="#4e7096"/>
-        <stop offset="45%" stop-color="#688cb3"/>
-        <stop offset="55%" stop-color="#6b90b7"/>
-        <stop offset="100%" stop-color="#4a6b90"/>
+        <stop offset="0%" stop-color="#2c4465"/>
+        <stop offset="45%" stop-color="#3c5b82"/>
+        <stop offset="55%" stop-color="#3e5f87"/>
+        <stop offset="100%" stop-color="#283e5c"/>
       </linearGradient>
     </defs>
     <rect width="512" height="512" fill="url(#wash)"/>
     ${stripes}
-    <line x1="256" y1="0" x2="256" y2="512" stroke="#c89a5b" stroke-width="2" stroke-dasharray="6 4" opacity="0.5"/>
+    <line x1="256" y1="0" x2="256" y2="512" stroke="#b88842" stroke-width="2.5" stroke-dasharray="6 4" opacity="0.75"/>
   </svg>`;
-  return sharp(Buffer.from(svg)).resize(256, 256).png({ palette: true, compressionLevel: 9 }).toBuffer();
+  return sharp(Buffer.from(svg)).resize(256, 256).png({ compressionLevel: 9 }).toBuffer();
 }
 
 async function createHairTexturePNG() {
@@ -340,20 +362,19 @@ async function buildAvatarGLB() {
     // 2: Soft rose lips
     { name: 'Lips', pbrMetallicRoughness: { baseColorFactor: [0.74, 0.30, 0.38, 1], metallicFactor: 0.02, roughnessFactor: 0.40 } },
     // 3: Long glossy dark-brown hair
-    { name: 'Hair', pbrMetallicRoughness: { baseColorTexture: { index: hairTex }, baseColorFactor: [1, 1, 1, 1], metallicFactor: 0.05, roughnessFactor: 0.42 } },
+    { name: 'Hair', pbrMetallicRoughness: { baseColorTexture: { index: hairTex }, baseColorFactor: [0.55, 0.32, 0.20, 1], metallicFactor: 0.05, roughnessFactor: 0.42 } },
     // 4: Eye sclera white
     { name: 'Sclera', pbrMetallicRoughness: { baseColorFactor: [0.99, 0.98, 0.98, 1], metallicFactor: 0.0, roughnessFactor: 0.18 } },
     // 5: Dark lash / pupil
     { name: 'DarkEye', pbrMetallicRoughness: { baseColorFactor: [0.09, 0.04, 0.03, 1], metallicFactor: 0.05, roughnessFactor: 0.12 } },
-    // 5b -> wait keep index mapping clean: add IrisBrown & Eyelash at end!
     // 6: Glossy white catchlight
     { name: 'Catchlight', emissiveFactor: [0.95, 0.95, 0.95], pbrMetallicRoughness: { baseColorFactor: [1, 1, 1, 1], roughnessFactor: 0.1 } },
-    // 7: Woven Plaid Shirt
-    { name: 'PlaidShirt', pbrMetallicRoughness: { baseColorTexture: { index: plaidTex }, baseColorFactor: [1, 1, 1, 1], metallicFactor: 0.0, roughnessFactor: 0.85 } },
-    // 8: Washed Blue Denim Jeans
-    { name: 'DenimJeans', pbrMetallicRoughness: { baseColorTexture: { index: denimTex }, baseColorFactor: [1, 1, 1, 1], metallicFactor: 0.0, roughnessFactor: 0.82 } },
+    // 7: Woven Plaid Shirt - tinted with rich warm caramel tan so it NEVER blows out to white under lights
+    { name: 'PlaidShirt', pbrMetallicRoughness: { baseColorTexture: { index: plaidTex }, baseColorFactor: [0.82, 0.64, 0.45, 1], metallicFactor: 0.0, roughnessFactor: 0.88 } },
+    // 8: Washed Blue Denim Jeans - authentic medium indigo blue denim wash
+    { name: 'DenimJeans', pbrMetallicRoughness: { baseColorTexture: { index: denimTex }, baseColorFactor: [0.48, 0.62, 0.82, 1], metallicFactor: 0.0, roughnessFactor: 0.82 } },
     // 9: Lighter rolled denim cuff
-    { name: 'DenimCuff', pbrMetallicRoughness: { baseColorFactor: [0.54, 0.67, 0.80, 1], metallicFactor: 0.0, roughnessFactor: 0.8 } },
+    { name: 'DenimCuff', pbrMetallicRoughness: { baseColorFactor: [0.46, 0.58, 0.74, 1], metallicFactor: 0.0, roughnessFactor: 0.8 } },
     // 10: Brown sandal strap leather
     { name: 'SandalLeather', pbrMetallicRoughness: { baseColorFactor: [0.36, 0.21, 0.14, 1], metallicFactor: 0.05, roughnessFactor: 0.55 } },
     // 11: Sandal cork footbed

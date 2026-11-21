@@ -33,15 +33,15 @@ export async function initAvatarStage() {
   camera.position.set(0, 1.02, 3.22);
   camera.lookAt(0, 0.86, 0);
 
-  // Soft 3-point flattering studio lighting
-  scene.add(new THREE.HemisphereLight(0xfff5f9, 0xe295b5, 1.85));
-  const key = new THREE.DirectionalLight(0xfff4ea, 2.0);
+  // Soft 3-point flattering studio lighting - calibrated so clothing colors stay rich and natural
+  scene.add(new THREE.HemisphereLight(0xfff5f9, 0xd4759b, 1.15));
+  const key = new THREE.DirectionalLight(0xfff5eb, 1.35);
   key.position.set(1.8, 3.2, 3.8);
   scene.add(key);
-  const fill = new THREE.DirectionalLight(0xfff0f5, 0.9);
+  const fill = new THREE.DirectionalLight(0xfff0f5, 0.65);
   fill.position.set(-1.5, 1.5, 3.0);
   scene.add(fill);
-  const rim = new THREE.DirectionalLight(0xff8fc1, 1.05);
+  const rim = new THREE.DirectionalLight(0xff8fc1, 0.75);
   rim.position.set(-2.5, 2.4, -2.0);
   scene.add(rim);
 
