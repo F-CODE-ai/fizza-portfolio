@@ -30,8 +30,8 @@ export async function initAvatarStage() {
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(32, w / h, 0.1, 20);
-  camera.position.set(0, 1.02, 3.22);
-  camera.lookAt(0, 0.86, 0);
+  camera.position.set(0, 0.98, 2.75);
+  camera.lookAt(0, 0.88, 0);
 
   // Soft 3-point flattering studio lighting - calibrated so clothing colors stay rich and natural
   scene.add(new THREE.HemisphereLight(0xfff5f9, 0xd4759b, 1.15));
