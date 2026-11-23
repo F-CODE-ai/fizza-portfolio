@@ -1,4 +1,4 @@
-// Extra credit features: Dark/Light theme toggle & Project category filter + search.
+// Dark/Light theme toggle & Project category filter + search.
 export function initThemeToggle() {
   const btn = document.getElementById('theme-toggle');
   if (!btn) return;

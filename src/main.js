@@ -33,7 +33,7 @@ function supportsWebGL() {
 function init3DFeatures() {
   if (!supportsWebGL()) return;
 
-  // Lazy-load Hero 3D Avatar stage (Module 2) so three.js stays out of the Classic entry bundle
+  // Lazy-load Hero 3D Avatar stage so three.js stays out of the Classic entry bundle
   import('./classic/avatar-stage.js')
     .then(({ initAvatarStage }) => initAvatarStage())
     .catch(() => {});

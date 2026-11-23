@@ -1,4 +1,4 @@
-// Module 4: RAG AI Twin Chatbot endpoint (/api/chat)
+// RAG AI Twin Chatbot endpoint (/api/chat)
 // - Checks origin & rate limits
 // - Screens for prompt-injection and private-data exfiltration (phone, address)
 // - Retrieves relevant portfolio chunks (Supabase pgvector hybrid RPC if configured, else local vector+BM25 index)

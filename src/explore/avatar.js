@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-const URL = '/models/chef-fizz.glb';
+const URL = '/models/chef-fizz.glb?v=7';
 
 // Standing waypoints on the kitchen floor in front of each 3D hotspot
 export const SPOT_WAYPOINTS = {

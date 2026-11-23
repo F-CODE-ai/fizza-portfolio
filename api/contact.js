@@ -1,4 +1,4 @@
-// Module 5: Contact form serverless API (GET issues an HMAC time-trap token;
+// Contact form serverless API (GET issues an HMAC time-trap token;
 // POST validates input with zod, checks origin, honeypot, time-trap, Turnstile,
 // rate limit, stores in Supabase with service role key, and sends email via Gmail SMTP).
 import { z } from 'zod';

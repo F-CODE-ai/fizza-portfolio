@@ -1,4 +1,4 @@
-// Module 3: 35-second After-Effects-style motion graphics promotional video player
+// 35-second After-Effects-style motion graphics promotional video player
 // Features:
 //  - 60 FPS procedural After Effects visual effects (3D perspective neon grid, additive light leaks,
 //    rotating 4-point star flares, glassmorphic kinetic typography cards, holographic PiP preview,

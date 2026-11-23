@@ -1,4 +1,4 @@
-// Shared RAG engine for Module 4 (P5):
+// Shared RAG engine:
 // - Chunks content/*.md
 // - Screens user queries for prompt-injection attacks and private-data requests (phone, home address)
 // - Performs hybrid retrieval (pgvector RPC when SUPABASE_URL + GEMINI_API_KEY exist, plus deterministic BM25-style TF-IDF + cosine vector index over content/kb-index.json)

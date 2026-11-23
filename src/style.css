@@ -102,7 +102,7 @@ html { scroll-behavior: smooth; scroll-padding-top: 4.5rem; }
 /* JS-only reveal: content is fully visible without JS or with reduced motion */
 .js .reveal.pre { opacity: 0; transform: translateY(24px); }
 
-/* --- Dark theme (Midnight Kitchen mode - Extra credit) --- */
+/* --- Dark theme (Midnight Kitchen mode) --- */
 html[data-theme="dark"] {
   --color-petal: #1c0b16;
   --color-blush: #2a1122;
@@ -132,7 +132,7 @@ html[data-theme="dark"] .spot-label {
 }
 .btn-icon:hover { border-color: var(--color-barbie); }
 
-/* --- Hero 3D Avatar stage (Module 2) --- */
+/* --- Hero 3D Avatar stage --- */
 .hero-stage { position: relative; }
 .avatar-card {
   margin-top: -2.4rem; margin-left: auto; margin-right: .75rem;
@@ -183,7 +183,7 @@ html[data-theme="dark"] .avatar-speech {
 }
 .chip-btn:hover, .chip-btn.active { background: var(--color-barbie); color: #fff; border-color: var(--color-barbie); }
 
-/* --- Promo video (Module 3) --- */
+/* --- Promo video --- */
 .promo-stage { display: grid; gap: .75rem; }
 .promo-canvas {
   width: 100%; height: auto; aspect-ratio: 16 / 9;
@@ -202,7 +202,7 @@ html[data-theme="dark"] .avatar-speech {
   height: 100%; width: 0%; background: var(--color-barbie); transition: width .1s linear;
 }
 
-/* --- Project filter & search (Extra credit) --- */
+/* --- Project filter & search --- */
 .filter-chip {
   background: #fff; color: var(--color-plum);
   border: 1.5px solid var(--color-rose); border-radius: 999px;
@@ -216,7 +216,7 @@ html[data-theme="dark"] .avatar-speech {
   padding: .3rem .85rem; font-size: .88rem; background: #fff; color: var(--color-plum);
 }
 
-/* --- RAG Chatbot widget (Module 4) --- */
+/* --- RAG Chatbot widget --- */
 .chat-widget {
   position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 80;
 }

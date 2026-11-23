@@ -1,198 +1,310 @@
-// Generates public/models/chef-fizz.glb (GLB 2.0 binary) — sculpted, high-fidelity 3D avatar
-// modeled faithfully after Fizza Aman's reference photograph:
-//   - Natural feminine facial features: gentle jawline, delicate chin, almond hazel-brown eyes,
-//     natural eyeliner & lashes, arched dark eyebrows, delicate nose, smiling rose lips
-//   - Voluminous dark-brown layered hair with natural middle-part, face-framing curtain bangs,
-//     and lush thick locks cascading forward over both shoulders and down her chest
-//   - Genuine woven caramel-tan / chocolate / olive plaid collared button-up shirt (tiled UVs so
-//     checks and stripes are crisp and vibrant across chest, shoulders, collar, and sleeves)
-//   - Straight-leg vintage medium-blue denim jeans with seamless hip join and rolled ankle cuffs
-//   - Brown double-buckle Birkenstock-style slide sandals with cork footbed and gold buckles
-//   - Gold wristwatch on left wrist + iced coffee latte cup with green lid & straw in left hand
-//   - Smooth keyframed animations: "idle" (gentle breathing & head tilt), "walk" (stride), "wave", "talk"
+// Generates public/models/chef-fizz.glb (GLB 2.0 binary) — sculpted, 100% geometry-baked
+// multi-material 3D avatar modeled faithfully after Fizza Aman's reference photograph.
+//
+// Uses exact sRGB-to-Linear glTF 2.0 material conversion so every color renders
+// accurately in both Three.js and Blender Cycles/EEVEE without washing out.
 import * as THREE from 'three';
-import sharp from 'sharp';
 import { mkdirSync, writeFileSync } from 'node:fs';
 
-// ---------------------------------------------------------------------------
-// 1. Procedural High-Contrast PBR PNG Textures (embedded inside GLB)
-// ---------------------------------------------------------------------------
-async function createPlaidTexturePNG() {
-  // 256x256 texture with 2x2 repeating Scottish/autumn plaid blocks
-  // Sampled directly from Fizza's photo: warm golden-tan flannel, rich dark chocolate,
-  // slate-olive checks, deep espresso crossing blocks, and ochre gold threads.
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
-    <!-- Rich warm golden-tan flannel base -->
-    <rect width="256" height="256" fill="#a47a4f"/>
-
-    <!-- Broad dark chocolate check bands -->
-    <rect x="0" y="0" width="36" height="256" fill="#382114" opacity="0.88"/>
-    <rect x="128" y="0" width="36" height="256" fill="#382114" opacity="0.88"/>
-    <rect x="0" y="0" width="256" height="36" fill="#382114" opacity="0.88"/>
-    <rect x="0" y="128" width="256" height="36" fill="#382114" opacity="0.88"/>
-
-    <!-- Secondary olive-slate bands -->
-    <rect x="68" y="0" width="24" height="256" fill="#4d5c49" opacity="0.80"/>
-    <rect x="196" y="0" width="24" height="256" fill="#4d5c49" opacity="0.80"/>
-    <rect x="0" y="68" width="256" height="24" fill="#4d5c49" opacity="0.80"/>
-    <rect x="0" y="196" width="256" height="24" fill="#4d5c49" opacity="0.80"/>
-
-    <!-- Crossing deep espresso intersection squares -->
-    <rect x="0" y="0" width="36" height="36" fill="#1f120a"/>
-    <rect x="128" y="0" width="36" height="36" fill="#1f120a"/>
-    <rect x="0" y="128" width="36" height="36" fill="#1f120a"/>
-    <rect x="128" y="128" width="36" height="36" fill="#1f120a"/>
-
-    <rect x="68" y="68" width="24" height="24" fill="#2d372a"/>
-    <rect x="196" y="68" width="24" height="24" fill="#2d372a"/>
-    <rect x="68" y="196" width="24" height="24" fill="#2d372a"/>
-    <rect x="196" y="196" width="24" height="24" fill="#2d372a"/>
-
-    <!-- Fine ochre-amber accent threads -->
-    <rect x="18" y="0" width="3.5" height="256" fill="#d99f3b"/>
-    <rect x="146" y="0" width="3.5" height="256" fill="#d99f3b"/>
-    <rect x="0" y="18" width="256" height="3.5" fill="#d99f3b"/>
-    <rect x="0" y="146" width="256" height="3.5" fill="#d99f3b"/>
-
-    <!-- Soft muted cream thread (very fine 2px, subtle accent only) -->
-    <rect x="80" y="0" width="2" height="256" fill="#e8dacb" opacity="0.6"/>
-    <rect x="208" y="0" width="2" height="256" fill="#e8dacb" opacity="0.6"/>
-    <rect x="0" y="80" width="256" height="2" fill="#e8dacb" opacity="0.6"/>
-    <rect x="0" y="208" width="256" height="2" fill="#e8dacb" opacity="0.6"/>
-  </svg>`;
-  return sharp(Buffer.from(svg)).resize(256, 256).png({ compressionLevel: 9 }).toBuffer();
+function srgbToLinear(hex) {
+  const h = hex.replace('#', '');
+  const r = parseInt(h.slice(0, 2), 16) / 255;
+  const g = parseInt(h.slice(2, 4), 16) / 255;
+  const b = parseInt(h.slice(4, 6), 16) / 255;
+  const toLin = (c) => (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+  return [
+    Number(toLin(r).toFixed(4)),
+    Number(toLin(g).toFixed(4)),
+    Number(toLin(b).toFixed(4)),
+    1,
+  ];
 }
 
-async function createDenimTexturePNG() {
-  let twill = '';
-  for (let i = 0; i < 256; i += 4) {
-    twill += `<line x1="${i}" y1="0" x2="${i + 12}" y2="256" stroke="#1c2f4a" stroke-width="1.8" opacity="0.4"/>`;
+// ---------------------------------------------------------------------------
+// 1. Material Palette (sRGB colors sampled from Fizza's photo -> glTF Linear)
+// ---------------------------------------------------------------------------
+const MATERIALS = [
+  // 0: Warm South Asian golden-olive skin (#dba586)
+  { name: 'Skin', pbrMetallicRoughness: { baseColorFactor: srgbToLinear('#dba586'), metallicFactor: 0.0, roughnessFactor: 0.56 } },
+  // 1: Soft warm eyelid / nose contour shade (#c98b6f)
+  { name: 'SkinShade', pbrMetallicRoughness: { baseColorFactor: srgbToLinear('#c98b6f'), metallicFactor: 0.0, roughnessFactor: 0.58 } },
+  // 2: Natural rose-berry smiling lips (#b04e5a)
+  { name: 'Lips', pbrMetallicRoughness: { baseColorFactor: srgbToLinear('#b04e5a'), metallicFactor: 0.02, roughnessFactor: 0.34 } },
+  // 3: Deep espresso dark-brown hair base & roots (#23140c)
+  { name: 'HairDeep', pbrMetallicRoughness: { baseColorFactor: srgbToLinear('#23140c'), metallicFactor: 0.03, roughnessFactor: 0.42 } },
+  // 4: Rich dark brunette hair main waves (#331d12)
+  { name: 'HairBrunette', pbrMetallicRoughness: { baseColorFactor: srgbToLinear('#331d12'), metallicFactor: 0.04, roughnessFactor: 0.38 } },
+  // 5: Warm chestnut hair sheen highlights (#46291a)
+  { name: 'HairChestnut', pbrMetallicRoughness: { baseColorFactor: srgbToLinear('#46291a'), metallicFactor: 0.05, roughnessFactor: 0.36 } },
+  // 6: Eye sclera soft off-white (#f7f4f2)
+  { name: 'Sclera', pbrMetallicRoughness: { baseColorFactor: srgbToLinear('#f7f4f2'), metallicFactor: 0.0, roughnessFactor: 0.16 } },
+  // 7: Rich dark warm-brown iris (#3b1d0e)
+  { name: 'IrisBrown', pbrMetallicRoughness: { baseColorFactor: srgbToLinear('#3b1d0e'), metallicFactor: 0.02, roughnessFactor: 0.14 } },
+  // 8: Deep black pupil & winged eyeliner lash line (#120806)
+  { name: 'EyelinerBlack', pbrMetallicRoughness: { baseColorFactor: srgbToLinear('#120806'), metallicFactor: 0.02, roughnessFactor: 0.14 } },
+  // 9: Pure white eye catchlight twinkle
+  { name: 'Catchlight', emissiveFactor: [0.96, 0.96, 0.96], pbrMetallicRoughness: { baseColorFactor: [1, 1, 1, 1], metallicFactor: 0.0, roughnessFactor: 0.05 } },
+
+  // --- Woven Plaid Shirt Palette (Sampled from Fizza's plaid flannel shirt) ---
+  // 10: Plaid warm camel-tan base (#b48e65)
+  { name: 'PlaidShirt_Tan', pbrMetallicRoughness: { baseColorFactor: srgbToLinear('#b48e65'), metallicFactor: 0.0, roughnessFactor: 0.85 } },
+  // 11: Plaid soft slate blue-grey check (#66798b)
+  { name: 'PlaidShirt_Slate', pbrMetallicRoughness: { baseColorFactor: srgbToLinear('#66798b'), metallicFactor: 0.0, roughnessFactor: 0.85 } },
+  // 12: Plaid deep cocoa brown stripe (#4d3421)
+  { name: 'PlaidShirt_Cocoa', pbrMetallicRoughness: { baseColorFactor: srgbToLinear('#4d3421'), metallicFactor: 0.0, roughnessFactor: 0.88 } },
+  // 13: Plaid warm golden-taupe check (#947250)
+  { name: 'PlaidShirt_Taupe', pbrMetallicRoughness: { baseColorFactor: srgbToLinear('#947250'), metallicFactor: 0.0, roughnessFactor: 0.85 } },
+  // 14: Plaid crisp ivory-cream pin-stripe (#eee3d5)
+  { name: 'PlaidShirt_Cream', pbrMetallicRoughness: { baseColorFactor: srgbToLinear('#eee3d5'), metallicFactor: 0.0, roughnessFactor: 0.82 } },
+
+  // --- Vintage Blue Denim Jeans Palette ---
+  // 15: Classic medium vintage blue denim (#4c729c)
+  { name: 'DenimJeans_Base', pbrMetallicRoughness: { baseColorFactor: srgbToLinear('#4c729c'), metallicFactor: 0.0, roughnessFactor: 0.82 } },
+  // 16: Soft vintage washed front thigh denim (#5b82ad)
+  { name: 'DenimJeans_Highlight', pbrMetallicRoughness: { baseColorFactor: srgbToLinear('#5b82ad'), metallicFactor: 0.0, roughnessFactor: 0.80 } },
+  // 17: Darker indigo denim side seam & fly detail (#38567a)
+  { name: 'DenimJeans_Dark', pbrMetallicRoughness: { baseColorFactor: srgbToLinear('#38567a'), metallicFactor: 0.0, roughnessFactor: 0.84 } },
+  // 18: Rolled light-denim ankle cuff (#7a9cc2)
+  { name: 'DenimJeans_Cuff', pbrMetallicRoughness: { baseColorFactor: srgbToLinear('#7a9cc2'), metallicFactor: 0.0, roughnessFactor: 0.80 } },
+
+  // --- Footwear & Accessories ---
+  // 19: Brown Birkenstock slide sandal leather straps (#4a2b1b)
+  { name: 'SandalLeather', pbrMetallicRoughness: { baseColorFactor: srgbToLinear('#4a2b1b'), metallicFactor: 0.04, roughnessFactor: 0.50 } },
+  // 20: Cork sandal footbed (#8f6847)
+  { name: 'CorkSole', pbrMetallicRoughness: { baseColorFactor: srgbToLinear('#8f6847'), metallicFactor: 0.0, roughnessFactor: 0.82 } },
+  // 21: Metallic gold (wristwatch, sandal buckles, necklace pendant) (#e5b842)
+  { name: 'Gold', pbrMetallicRoughness: { baseColorFactor: srgbToLinear('#e5b842'), metallicFactor: 0.80, roughnessFactor: 0.22 } },
+  // 22: Iced latte creamy milk top (#f2e7d8)
+  { name: 'IcedLatte_Cream', pbrMetallicRoughness: { baseColorFactor: srgbToLinear('#f2e7d8'), metallicFactor: 0.02, roughnessFactor: 0.25 } },
+  // 23: Iced latte coffee middle (#cfa376)
+  { name: 'IcedLatte_Coffee', pbrMetallicRoughness: { baseColorFactor: srgbToLinear('#cfa376'), metallicFactor: 0.02, roughnessFactor: 0.25 } },
+  // 24: Iced latte rich espresso bottom (#9c693e)
+  { name: 'IcedLatte_Espresso', pbrMetallicRoughness: { baseColorFactor: srgbToLinear('#9c693e'), metallicFactor: 0.02, roughnessFactor: 0.25 } },
+  // 25: Signature emerald-green cup lid & logo (#15734f)
+  { name: 'IcedLatte_Lid', pbrMetallicRoughness: { baseColorFactor: srgbToLinear('#15734f'), metallicFactor: 0.05, roughnessFactor: 0.32 } },
+  // 26: Pearl white shirt buttons & straw (#f7f4f0)
+  { name: 'IcedLatte_Straw', pbrMetallicRoughness: { baseColorFactor: srgbToLinear('#f7f4f0'), metallicFactor: 0.04, roughnessFactor: 0.28 } },
+];
+
+const PLAID_ROW = [14, 10, 10, 12, 13, 10, 14, 11, 11, 12, 10, 13];
+function getPlaidMaterial(uIdx, vIdx) {
+  const u = ((uIdx % 12) + 12) % 12;
+  const v = ((vIdx % 12) + 12) % 12;
+  const ru = PLAID_ROW[u];
+  const rv = PLAID_ROW[v];
+  if (ru === 14 || rv === 14) return 14;
+  if (ru === 12 || rv === 12) return 12;
+  if (ru === 11 && rv === 11) return 11;
+  if (ru === 11 || rv === 11) return (u + v) % 2 === 0 ? 11 : 13;
+  if (ru === 13 || rv === 13) return 13;
+  return 10;
+}
+
+// Note: in Three.js LatheGeometry, u=0 (phi=0) is +Z (FRONT), u=radialSegs/4 is +X (OUTER SIDE),
+// u=radialSegs/2 is -Z (BACK), u=3*radialSegs/4 is -X (INNER SIDE).
+function getDenimMaterial(uIdx, radialSegs, vIdx, heightSegs) {
+  if (vIdx <= 2) return 18; // Rolled light-denim ankle cuff
+  const u = uIdx % radialSegs;
+  const q1 = Math.round(radialSegs * 0.25); // +X side seam
+  const q3 = Math.round(radialSegs * 0.75); // -X inseam
+  if (u === q1 || u === q3) return 17;
+  // Front of thigh/shin is around u = 0..4 and u = radialSegs-4..radialSegs-1
+  const distFromFront = Math.min(u, radialSegs - u) / radialSegs;
+  if (distFromFront < 0.14 && vIdx >= 7 && vIdx <= heightSegs - 5) {
+    return 16; // soft vintage front wash highlight
   }
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
-    <defs>
-      <linearGradient id="denimGrad" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0%" stop-color="#2c466c"/>
-        <stop offset="48%" stop-color="#3c5e8c"/>
-        <stop offset="52%" stop-color="#3e6191"/>
-        <stop offset="100%" stop-color="#284063"/>
-      </linearGradient>
-    </defs>
-    <rect width="256" height="256" fill="url(#denimGrad)"/>
-    ${twill}
-    <!-- Outer gold jeans seam -->
-    <line x1="128" y1="0" x2="128" y2="256" stroke="#c89642" stroke-width="2.5" stroke-dasharray="5 4" opacity="0.85"/>
-  </svg>`;
-  return sharp(Buffer.from(svg)).resize(256, 256).png({ compressionLevel: 9 }).toBuffer();
-}
-
-async function createHairTexturePNG() {
-  let strands = '';
-  for (let i = 0; i < 256; i += 3) {
-    const col = i % 9 === 0 ? '#4a2c1b' : i % 6 === 0 ? '#1b0e08' : '#321c11';
-    strands += `<rect x="${i}" y="0" width="2" height="256" fill="${col}" opacity="0.6"/>`;
-  }
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
-    <rect width="256" height="256" fill="#25140b"/>
-    ${strands}
-  </svg>`;
-  return sharp(Buffer.from(svg)).resize(256, 256).png({ compressionLevel: 9 }).toBuffer();
-}
-
-async function createLatteTexturePNG() {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
-    <defs>
-      <linearGradient id="coffee" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#fdfbf7"/>
-        <stop offset="25%" stop-color="#edd9c2"/>
-        <stop offset="65%" stop-color="#bd8f61"/>
-        <stop offset="100%" stop-color="#8c582f"/>
-      </linearGradient>
-    </defs>
-    <rect width="256" height="256" fill="url(#coffee)"/>
-    <!-- Iconic green circular logo on cup -->
-    <circle cx="128" cy="135" r="26" fill="#146b48"/>
-    <circle cx="128" cy="135" r="21" fill="#ffffff" opacity="0.2"/>
-  </svg>`;
-  return sharp(Buffer.from(svg)).resize(256, 256).png({ compressionLevel: 9 }).toBuffer();
+  return 15;
 }
 
 // ---------------------------------------------------------------------------
-// 2. Geometry Helpers with Tileable UV Support
+// 2. Geometry Sculpting Helpers
 // ---------------------------------------------------------------------------
-function ensureUVAndIndex(geom, uTile = 1.0, vTile = 1.0) {
-  let g = geom;
-  if (!g.index) {
-    const count = g.attributes.position.count;
+function ensureIndexAndNormals(geom) {
+  if (!geom.index) {
+    const count = geom.attributes.position.count;
     const idx = new Uint32Array(count);
     for (let i = 0; i < count; i++) idx[i] = i;
-    g.setIndex(new THREE.BufferAttribute(idx, 1));
+    geom.setIndex(new THREE.BufferAttribute(idx, 1));
   }
-  if (!g.attributes.normal) g.computeVertexNormals();
-  if (!g.attributes.uv) {
-    const count = g.attributes.position.count;
-    g.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(count * 2), 2));
-  } else if (uTile !== 1.0 || vTile !== 1.0) {
-    const uv = g.attributes.uv;
-    for (let i = 0; i < uv.count; i++) {
-      uv.setXY(i, uv.getX(i) * uTile, uv.getY(i) * vTile);
-    }
-  }
-  return g;
+  geom.computeVertexNormals();
+  return geom;
 }
 
-function transformGeom(geom, { sx = 1, sy = 1, sz = 1, rx = 0, ry = 0, rz = 0, tx = 0, ty = 0, tz = 0, uTile = 1, vTile = 1 } = {}) {
+function transformGeom(geom, { sx = 1, sy = 1, sz = 1, rx = 0, ry = 0, rz = 0, tx = 0, ty = 0, tz = 0 } = {}) {
   const m = new THREE.Matrix4();
   const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz));
   m.compose(new THREE.Vector3(tx, ty, tz), q, new THREE.Vector3(sx, sy, sz));
   geom.applyMatrix4(m);
-  geom.computeVertexNormals();
-  return ensureUVAndIndex(geom, uTile, vTile);
+  return ensureIndexAndNormals(geom);
 }
 
-// Smooth oval feminine head matching Fizza's facial structure (NO clown blush spheres!)
+function splitGridByMaterial(baseGeom, radialSegs, heightSegs, materialPicker) {
+  const pos = baseGeom.attributes.position;
+  const norm = baseGeom.attributes.normal;
+  const stride = heightSegs + 1;
+  const buckets = new Map();
+
+  function addTri(matIdx, a, b, c) {
+    let arr = buckets.get(matIdx);
+    if (!arr) {
+      arr = { pos: [], norm: [], idx: [] };
+      buckets.set(matIdx, arr);
+    }
+    const base = arr.pos.length / 3;
+    for (const v of [a, b, c]) {
+      arr.pos.push(pos.getX(v), pos.getY(v), pos.getZ(v));
+      arr.norm.push(norm.getX(v), norm.getY(v), norm.getZ(v));
+    }
+    arr.idx.push(base, base + 1, base + 2);
+  }
+
+  for (let u = 0; u < radialSegs; u++) {
+    for (let v = 0; v < heightSegs; v++) {
+      const a = u * stride + v;
+      const b = (u + 1) * stride + v;
+      const c = (u + 1) * stride + (v + 1);
+      const d = u * stride + (v + 1);
+      const matIdx = materialPicker(u, v);
+      addTri(matIdx, a, b, d);
+      addTri(matIdx, b, c, d);
+    }
+  }
+
+  const parts = [];
+  for (const [matIdx, data] of buckets.entries()) {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(data.pos, 3));
+    g.setAttribute('normal', new THREE.Float32BufferAttribute(data.norm, 3));
+    g.setIndex(data.idx);
+    parts.push([g, matIdx]);
+  }
+  return parts;
+}
+
+// Sculpted feminine V-oval head matching Fizza's slender jawline & dainty chin
 function createSculptedHead() {
-  const g = new THREE.SphereGeometry(0.145, 42, 34);
+  const g = new THREE.SphereGeometry(0.114, 48, 36);
   const pos = g.attributes.position;
   for (let i = 0; i < pos.count; i++) {
     let x = pos.getX(i);
     let y = pos.getY(i);
     let z = pos.getZ(i);
 
-    // Natural feminine head height
-    y *= 1.14;
-
-    // Graceful jaw taper toward chin (narrowing smoothly)
-    if (y < 0.0) {
-      const t = Math.min(1, -y / 0.165);
-      const jawNarrow = 1.0 - 0.32 * t * t;
-      x *= jawNarrow;
-      z *= 1.0 - 0.12 * t;
-      if (z > 0.02) z += 0.015 * Math.sin(t * Math.PI * 0.85); // soft rounded chin
+    if (y >= 0) {
+      y *= 1.12;
+      x *= 0.98;
+    } else {
+      y *= 0.94; // compact, feminine lower face (chin tip at y = -0.107)
+      const t = Math.min(1, -y / 0.107);
+      // Slender V-oval jawline taper matching Fizza's photo
+      x *= 1.0 - 0.44 * Math.pow(t, 1.35);
+      z *= 1.0 - 0.18 * t;
+      if (z > 0.02) {
+        z += 0.012 * Math.sin(t * Math.PI * 0.85);
+      }
     }
 
-    // Natural smooth cheekbones (subtle, flush with face, NO separate spheres!)
-    if (z > 0.02 && y > -0.07 && y < 0.04) {
-      const cheek = Math.exp(-Math.pow((y + 0.015) / 0.045, 2)) * 0.008;
-      z += cheek * Math.max(0, 1 - Math.abs(x) / 0.13);
-    }
-
-    // Forehead slope
-    if (y > 0.05 && z > 0.03) {
-      z -= (y - 0.05) * 0.10;
+    // Soft natural cheekbones
+    if (z > 0.02 && y > -0.042 && y < 0.025) {
+      const cheek = Math.exp(-Math.pow((y + 0.008) / 0.030, 2)) * 0.007;
+      z += cheek * Math.max(0, 1 - Math.abs(x) / 0.10);
     }
 
     pos.setXYZ(i, x, y, z);
   }
-  g.computeVertexNormals();
-  return ensureUVAndIndex(g);
+  return ensureIndexAndNormals(g);
 }
 
-// Ribbon along a curve for lush hair strands, eyebrows, lips
-function createTaperedRibbon(points, { segs = 24, radialSegs = 10, rx0 = 0.035, rx1 = 0.012, ry0 = 0.016, ry1 = 0.006, twist = 0, uTile = 1, vTile = 1 } = {}) {
+// Sculpted cranial hair volume covering crown, back, temples & nape with 100% solid coverage
+function createSculptedHairCap() {
+  const radialSegs = 48;
+  const latSegs = 32;
+  const positions = [];
+  const indices = [];
+
+  function getHairRim(theta) {
+    const cosT = Math.cos(theta); // +1 at front, -1 at back
+    const sinT = Math.sin(theta); // +1 at left, -1 at right
+    const absSin = Math.abs(sinT);
+
+    let x, y, z;
+    if (cosT >= 0) {
+      // Front half: forehead hairline to sideburns
+      const w = Math.pow(absSin, 1.25);
+      x = sinT * (0.092 + 0.018 * w);
+      // Forehead hairline at center sits naturally at y = 0.072 (natural feminine forehead)
+      y = 0.072 * (1 - w) + (-0.045) * w;
+      z = 0.112 * Math.sqrt(Math.max(0, 1 - Math.pow(absSin, 1.8))) + 0.025 * w;
+    } else {
+      // Back half: sideburns to nape of neck
+      const backT = -cosT; // 0 at sides, 1 at back center
+      const w = Math.pow(backT, 0.85);
+      x = sinT * (0.105 * (1 - w * 0.95));
+      y = (-0.045) * (1 - w) + (-0.142) * w;
+      z = - (0.025 * (1 - w) + 0.124 * w);
+    }
+    return { x, y, z };
+  }
+
+  // Generate vertices row by row from apex (v=0) to rim (v=1)
+  for (let j = 0; j <= latSegs; j++) {
+    const v = j / latSegs; // 0 at top apex, 1 at rim
+    const thetaV = v * Math.PI * 0.5;
+    const sinV = Math.sin(thetaV);
+    const cosV = Math.cos(thetaV);
+
+    for (let i = 0; i <= radialSegs; i++) {
+      const u = i / radialSegs;
+      const theta = u * Math.PI * 2 - Math.PI; // -PI to +PI
+      const rim = getHairRim(theta);
+
+      let x = rim.x * sinV;
+      let y = 0.150 * cosV + rim.y * Math.pow(sinV, 1.8);
+      let z = rim.z * sinV;
+
+      // Volumetric hair fullness (so it floats realistically over the skull, never clipping)
+      const fullness = 1.0 + 0.08 * Math.sin(v * Math.PI);
+      x *= fullness;
+      z *= fullness;
+
+      // Middle part indentation along top center of head (v < 0.72 and near z > 0)
+      if (v < 0.72) {
+        const frontBias = Math.max(0, Math.cos(theta));
+        const partFactor = (1 - v / 0.72) * frontBias;
+        const partIndent = 0.007 * Math.exp(-Math.pow(x / 0.016, 2)) * partFactor;
+        const moundLeft = 0.008 * Math.exp(-Math.pow((x - 0.040) / 0.026, 2)) * partFactor;
+        const moundRight = 0.008 * Math.exp(-Math.pow((x + 0.040) / 0.026, 2)) * partFactor;
+        y += (moundLeft + moundRight - partIndent);
+      }
+
+      positions.push(x, y, z);
+    }
+  }
+
+  // Generate quad indices with outward-facing normals
+  const stride = radialSegs + 1;
+  for (let j = 0; j < latSegs; j++) {
+    for (let i = 0; i < radialSegs; i++) {
+      const a = j * stride + i;
+      const b = (j + 1) * stride + i;
+      const c = (j + 1) * stride + i + 1;
+      const d = j * stride + i + 1;
+      // Winding order for outward normal: a, d, b, then d, c, b
+      indices.push(a, d, b, d, c, b);
+    }
+  }
+
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  g.setIndex(indices);
+  g.computeVertexNormals();
+  return ensureIndexAndNormals(g);
+}
+
+function createTaperedRibbon(points, { segs = 24, radialSegs = 10, rx0 = 0.035, rx1 = 0.012, ry0 = 0.016, ry1 = 0.006, twist = 0 } = {}) {
   const curve = new THREE.CatmullRomCurve3(points.map((p) => new THREE.Vector3(p[0], p[1], p[2])));
   const frames = curve.computeFrenetFrames(segs, false);
   const positions = [];
-  const uvs = [];
   const indices = [];
 
   for (let i = 0; i <= segs; i++) {
@@ -200,7 +312,7 @@ function createTaperedRibbon(points, { segs = 24, radialSegs = 10, rx0 = 0.035, 
     const center = curve.getPointAt(t);
     const N = frames.normals[i];
     const B = frames.binormals[i];
-    const taper = Math.sin(Math.min(1, t * 1.15) * Math.PI * 0.5) * (1 - Math.pow(t, 2.2) * 0.65) + (1 - t) * 0.28;
+    const taper = Math.sin(Math.min(1, t * 1.12) * Math.PI * 0.5) * (1 - Math.pow(t, 2.3) * 0.62) + (1 - t) * 0.30;
     const rx = (rx0 * (1 - t) + rx1 * t) * Math.max(0.25, taper);
     const ry = (ry0 * (1 - t) + ry1 * t) * Math.max(0.25, taper);
     const angOffset = twist * t;
@@ -209,11 +321,11 @@ function createTaperedRibbon(points, { segs = 24, radialSegs = 10, rx0 = 0.035, 
       const theta = (j / radialSegs) * Math.PI * 2 + angOffset;
       const cx = Math.cos(theta) * rx;
       const cy = Math.sin(theta) * ry;
-      const vx = center.x + cx * N.x + cy * B.x;
-      const vy = center.y + cx * N.y + cy * B.y;
-      const vz = center.z + cx * N.z + cy * B.z;
-      positions.push(vx, vy, vz);
-      uvs.push((j / radialSegs) * uTile, t * vTile);
+      positions.push(
+        center.x + cx * N.x + cy * B.x,
+        center.y + cx * N.y + cy * B.y,
+        center.z + cx * N.z + cy * B.z
+      );
     }
   }
 
@@ -230,98 +342,139 @@ function createTaperedRibbon(points, { segs = 24, radialSegs = 10, rx0 = 0.035, 
 
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-  g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
   g.setIndex(indices);
   g.computeVertexNormals();
   return g;
 }
 
-// Sculpted button-up shirt torso with TILED UVs (4.5 horizontal tiles, 3.5 vertical tiles)
-function createShirtTorso() {
-  const pts = [
-    new THREE.Vector2(0.01, -0.05),
-    new THREE.Vector2(0.146, -0.045),
-    new THREE.Vector2(0.148, 0.03),
-    new THREE.Vector2(0.134, 0.13),  // waist
-    new THREE.Vector2(0.148, 0.24),  // ribcage
-    new THREE.Vector2(0.160, 0.34),  // chest/shoulders
-    new THREE.Vector2(0.110, 0.40),  // collarbone slope
-    new THREE.Vector2(0.055, 0.42),  // collar opening
+// Multi-material woven plaid shirt torso (60 radial x 36 vertical quads)
+// Bottom hem flares slightly over the jeans waistband so jeans NEVER poke through the shirt!
+function createPlaidTorsoParts() {
+  const pts = [];
+  const heightSegs = 36;
+  const rawProfile = [
+    [-0.03, 0.060], // inner hem tuck
+    [-0.025, 0.156], // outer flared shirt hem overlapping cleanly outside jeans waist
+    [0.03,  0.150],
+    [0.10,  0.138], // waist
+    [0.18,  0.142],
+    [0.26,  0.152], // bust
+    [0.34,  0.156], // shoulders
+    [0.39,  0.105], // shoulder slope
+    [0.415, 0.044], // neck opening
   ];
-  const g = new THREE.LatheGeometry(pts, 34);
+  const profCurve = new THREE.SplineCurve(rawProfile.map(([y, r]) => new THREE.Vector2(r, y)));
+  for (let j = 0; j <= heightSegs; j++) {
+    pts.push(profCurve.getPoint(j / heightSegs));
+  }
+
+  const radialSegs = 60;
+  const g = new THREE.LatheGeometry(pts, radialSegs);
   const pos = g.attributes.position;
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i);
     const y = pos.getY(i);
     let z = pos.getZ(i) * 0.72;
     if (z > 0.01 && y > 0.15 && y < 0.34) {
-      const bust = Math.exp(-Math.pow((y - 0.245) / 0.065, 2)) * 0.024 * Math.max(0, 1 - Math.abs(x) / 0.15);
+      const bust = Math.exp(-Math.pow((y - 0.245) / 0.06, 2)) * 0.022 * Math.max(0, 1 - Math.abs(x) / 0.15);
       z += bust;
     }
-    pos.setXYZ(i, x * 1.05, y, z);
+    pos.setXYZ(i, x * 1.04, y, z);
   }
   g.computeVertexNormals();
-  // TILE UVs 4.5x3.5 so the plaid pattern is crisp and clearly visible across the chest & back!
-  return ensureUVAndIndex(g, 4.5, 3.5);
+
+  return splitGridByMaterial(g, radialSegs, heightSegs, (u, v) => {
+    // Open V-neck collarbone skin triangle at top front (u=0 / u=radialSegs is front +Z)
+    const distFromFront = Math.min(u, radialSegs - u);
+    const vFromTop = heightSegs - 1 - v;
+    if (vFromTop <= 9 && distFromFront <= Math.floor((9 - vFromTop) * 0.85)) {
+      return 0; // Skin in open V-neck
+    }
+    return getPlaidMaterial(u, v);
+  });
 }
 
-// Sculpted relaxed denim hips/pelvis seamlessly connecting to thighs
-function createDenimPelvis() {
-  const pts = [
-    new THREE.Vector2(0.01, -0.11),
-    new THREE.Vector2(0.148, -0.09),
-    new THREE.Vector2(0.158, -0.01),
-    new THREE.Vector2(0.146, 0.06),
-    new THREE.Vector2(0.130, 0.088),
-    new THREE.Vector2(0.01, 0.088),
+function createPlaidSleeveParts(transformOpts) {
+  const heightSegs = 18;
+  const radialSegs = 36;
+  const pts = [];
+  for (let j = 0; j <= heightSegs; j++) {
+    const t = j / heightSegs;
+    const r = 0.044 * (1 - t) + 0.050 * t;
+    const y = -0.105 + t * 0.21;
+    pts.push(new THREE.Vector2(r, y));
+  }
+  const g = new THREE.LatheGeometry(pts, radialSegs);
+  transformGeom(g, transformOpts);
+  return splitGridByMaterial(g, radialSegs, heightSegs, (u, v) => getPlaidMaterial(u * 2, v * 2));
+}
+
+// Smooth sculpted high-waisted denim jeans pelvis that tucks cleanly INSIDE the shirt hem
+function createDenimPelvisParts() {
+  const heightSegs = 18;
+  const radialSegs = 36;
+  const rawProfile = [
+    [-0.12, 0.005], // smooth closed saddle bottom between thighs
+    [-0.11, 0.095],
+    [-0.07, 0.144], // lower hip curve matching outer thigh width
+    [-0.01, 0.146], // mid hip
+    [0.04,  0.136], // upper waist tucked inside shirt hem (r=0.136 < shirt r=0.156)
+    [0.06,  0.010],
   ];
-  const g = new THREE.LatheGeometry(pts, 30);
-  return transformGeom(g, { sx: 1.05, sz: 0.78, uTile: 2.5, vTile: 2.0 });
+  const profCurve = new THREE.SplineCurve(rawProfile.map(([y, r]) => new THREE.Vector2(r, y)));
+  const pts = [];
+  for (let j = 0; j <= heightSegs; j++) pts.push(profCurve.getPoint(j / heightSegs));
+  const g = new THREE.LatheGeometry(pts, radialSegs);
+  transformGeom(g, { sx: 1.00, sz: 0.68, ty: 0.83 });
+  return splitGridByMaterial(g, radialSegs, heightSegs, (u) => {
+    // Subtle dark-indigo center fly seam at front (u === 0) and side seams (q1, q3)
+    const q1 = Math.round(radialSegs * 0.25);
+    const q3 = Math.round(radialSegs * 0.75);
+    if (u === 0 || u === q1 || u === q3) return 17;
+    return 15;
+  });
 }
 
-// Straight-leg denim jeans with tiled denim texture (2x around, 5x down the leg)
-function createDenimLeg() {
-  const pts = [
-    new THREE.Vector2(0.001, 0.0),
-    new THREE.Vector2(0.068, 0.005),
-    new THREE.Vector2(0.072, 0.04),
-    new THREE.Vector2(0.068, 0.055),
-    new THREE.Vector2(0.073, 0.22),
-    new THREE.Vector2(0.078, 0.40),
-    new THREE.Vector2(0.088, 0.62),
-    new THREE.Vector2(0.092, 0.74),
+// Wide/straight-leg vintage blue denim jeans leg
+function createDenimLegParts() {
+  const heightSegs = 28;
+  const radialSegs = 32;
+  const rawProfile = [
+    [0.00, 0.002],
+    [0.005, 0.072],
+    [0.042, 0.075],
+    [0.052, 0.070],
+    [0.24, 0.073],
+    [0.44, 0.076],
+    [0.64, 0.080],
+    [0.73, 0.080], // upper thigh tucked cleanly inside pelvis
+    [0.78, 0.062],
+    [0.80, 0.002],
   ];
-  const g = new THREE.LatheGeometry(pts, 26);
-  return transformGeom(g, { sx: 0.98, sz: 1.02, uTile: 2.0, vTile: 5.0 });
+  const profCurve = new THREE.SplineCurve(rawProfile.map(([y, r]) => new THREE.Vector2(r, y)));
+  const pts = [];
+  for (let j = 0; j <= heightSegs; j++) pts.push(profCurve.getPoint(j / heightSegs));
+  const g = new THREE.LatheGeometry(pts, radialSegs);
+  transformGeom(g, { sx: 0.94, sz: 0.96, ty: -0.74 });
+  return splitGridByMaterial(g, radialSegs, heightSegs, (u, v) => getDenimMaterial(u, radialSegs, v, heightSegs));
 }
 
-function createTaperedCylinder(rTop, rBot, h, segs = 20, uTile = 1.0, vTile = 1.0) {
-  const g = new THREE.CylinderGeometry(rTop, rBot, h, segs, 4);
-  return ensureUVAndIndex(g, uTile, vTile);
+function createTaperedCylinder(rTop, rBot, h, segs = 20) {
+  return ensureIndexAndNormals(new THREE.CylinderGeometry(rTop, rBot, h, segs, 4));
 }
 
 function createHand(isLeft) {
-  const g = new THREE.SphereGeometry(0.035, 18, 14);
-  return transformGeom(g, { sx: 0.85, sy: 1.25, sz: 0.55, rz: isLeft ? -0.08 : 0.08 });
+  const g = new THREE.SphereGeometry(0.032, 18, 14);
+  return transformGeom(g, { sx: 0.82, sy: 1.25, sz: 0.52, rz: isLeft ? -0.08 : 0.08 });
 }
 
 // ---------------------------------------------------------------------------
-// 3. GLB 2.0 Serializer
+// 3. Build Complete GLB 2.0 Binary
 // ---------------------------------------------------------------------------
 async function buildAvatarGLB() {
-  const [plaidPNG, denimPNG, hairPNG, lattePNG] = await Promise.all([
-    createPlaidTexturePNG(),
-    createDenimTexturePNG(),
-    createHairTexturePNG(),
-    createLatteTexturePNG(),
-  ]);
-
   const chunks = [];
   const bufferViews = [];
   const accessors = [];
-  const images = [];
-  const textures = [];
-  const samplers = [{ magFilter: 9729, minFilter: 9987, wrapS: 10497, wrapT: 10497 }];
   let byteOffset = 0;
 
   function pushBytes(u8, target) {
@@ -336,69 +489,35 @@ async function buildAvatarGLB() {
     return bvIndex;
   }
 
-  function addImageTexture(pngBuffer, name) {
-    const bv = pushBytes(new Uint8Array(pngBuffer));
-    const imgIdx = images.length;
-    images.push({ name, bufferView: bv, mimeType: 'image/png' });
-    const texIdx = textures.length;
-    textures.push({ sampler: 0, source: imgIdx });
-    return texIdx;
-  }
-
-  const plaidTex = addImageTexture(plaidPNG, 'PlaidShirt');
-  const denimTex = addImageTexture(denimPNG, 'DenimJeans');
-  const hairTex = addImageTexture(hairPNG, 'BrownHair');
-  const latteTex = addImageTexture(lattePNG, 'IcedLatte');
-
-  const materials = [
-    // 0: Warm South Asian skin tone (natural olive-golden tan, velvety smooth)
-    { name: 'Skin', pbrMetallicRoughness: { baseColorFactor: [0.82, 0.62, 0.50, 1], metallicFactor: 0.0, roughnessFactor: 0.62 } },
-    // 1: Subtle warm cheek tint (soft natural tone, flush with face)
-    { name: 'Blush', pbrMetallicRoughness: { baseColorFactor: [0.84, 0.56, 0.48, 1], metallicFactor: 0.0, roughnessFactor: 0.65 } },
-    // 2: Soft natural smiling rose lips
-    { name: 'Lips', pbrMetallicRoughness: { baseColorFactor: [0.70, 0.32, 0.38, 1], metallicFactor: 0.02, roughnessFactor: 0.35 } },
-    // 3: Long glossy dark-brown / chestnut hair
-    { name: 'Hair', pbrMetallicRoughness: { baseColorTexture: { index: hairTex }, baseColorFactor: [0.75, 0.55, 0.42, 1], metallicFactor: 0.04, roughnessFactor: 0.40 } },
-    // 4: Eye sclera soft white
-    { name: 'Sclera', pbrMetallicRoughness: { baseColorFactor: [0.96, 0.95, 0.94, 1], metallicFactor: 0.0, roughnessFactor: 0.20 } },
-    // 5: Dark eyeliner / pupil
-    { name: 'DarkEye', pbrMetallicRoughness: { baseColorFactor: [0.08, 0.04, 0.03, 1], metallicFactor: 0.02, roughnessFactor: 0.15 } },
-    // 6: Specular eye catchlight
-    { name: 'Catchlight', emissiveFactor: [0.98, 0.98, 0.98], pbrMetallicRoughness: { baseColorFactor: [1, 1, 1, 1], roughnessFactor: 0.05 } },
-    // 7: Woven Plaid Flannel Shirt (rich caramel tan with chocolate & olive checks)
-    { name: 'PlaidShirt', pbrMetallicRoughness: { baseColorTexture: { index: plaidTex }, baseColorFactor: [1, 1, 1, 1], metallicFactor: 0.0, roughnessFactor: 0.86 } },
-    // 8: Vintage Blue Denim Jeans
-    { name: 'DenimJeans', pbrMetallicRoughness: { baseColorTexture: { index: denimTex }, baseColorFactor: [1, 1, 1, 1], metallicFactor: 0.0, roughnessFactor: 0.82 } },
-    // 9: Lighter rolled denim cuff turn-up
-    { name: 'DenimCuff', pbrMetallicRoughness: { baseColorFactor: [0.50, 0.63, 0.78, 1], metallicFactor: 0.0, roughnessFactor: 0.8 } },
-    // 10: Brown Birkenstock slide sandal leather straps
-    { name: 'SandalLeather', pbrMetallicRoughness: { baseColorFactor: [0.32, 0.18, 0.11, 1], metallicFactor: 0.04, roughnessFactor: 0.55 } },
-    // 11: Sandal cork footbed
-    { name: 'CorkSole', pbrMetallicRoughness: { baseColorFactor: [0.68, 0.50, 0.35, 1], metallicFactor: 0.0, roughnessFactor: 0.82 } },
-    // 12: Gold watch & buckles
-    { name: 'Gold', pbrMetallicRoughness: { baseColorFactor: [0.94, 0.76, 0.30, 1], metallicFactor: 0.85, roughnessFactor: 0.22 } },
-    // 13: Barbie pink heart pin accent
-    { name: 'BarbiePink', pbrMetallicRoughness: { baseColorFactor: [0.92, 0.22, 0.54, 1], metallicFactor: 0.05, roughnessFactor: 0.38 } },
-    // 14: Iced Latte Cup with coffee swirl
-    { name: 'LatteCup', pbrMetallicRoughness: { baseColorTexture: { index: latteTex }, baseColorFactor: [1, 1, 1, 1], metallicFactor: 0.02, roughnessFactor: 0.25 } },
-    // 15: Signature Green Cup Lid
-    { name: 'CupLidGreen', pbrMetallicRoughness: { baseColorFactor: [0.10, 0.46, 0.32, 1], metallicFactor: 0.05, roughnessFactor: 0.35 } },
-    // 16: Pearl white shirt buttons & straw
-    { name: 'CreamWhite', pbrMetallicRoughness: { baseColorFactor: [0.96, 0.94, 0.92, 1], metallicFactor: 0.04, roughnessFactor: 0.3 } },
-    // 17: Rich hazel-brown iris
-    { name: 'IrisBrown', pbrMetallicRoughness: { baseColorFactor: [0.34, 0.18, 0.10, 1], metallicFactor: 0.04, roughnessFactor: 0.18 } },
-  ];
-
   const meshes = [];
   function buildMeshFromParts(name, parts) {
-    const primitives = [];
+    const byMat = new Map();
     for (const [geom, matIndex] of parts) {
-      ensureUVAndIndex(geom);
-      const posArr = new Float32Array(geom.attributes.position.array);
-      const normArr = new Float32Array(geom.attributes.normal.array);
-      const uvArr = new Float32Array(geom.attributes.uv.array);
-      const rawIdx = geom.index.array;
-      const idxArr = posArr.length / 3 > 65535 ? new Uint32Array(rawIdx) : new Uint16Array(rawIdx);
+      ensureIndexAndNormals(geom);
+      let bucket = byMat.get(matIndex);
+      if (!bucket) {
+        bucket = { pos: [], norm: [], idx: [] };
+        byMat.set(matIndex, bucket);
+      }
+      const posAttr = geom.attributes.position;
+      const normAttr = geom.attributes.normal;
+      const idxAttr = geom.index;
+      const base = bucket.pos.length / 3;
+      for (let i = 0; i < posAttr.count; i++) {
+        bucket.pos.push(posAttr.getX(i), posAttr.getY(i), posAttr.getZ(i));
+        bucket.norm.push(normAttr.getX(i), normAttr.getY(i), normAttr.getZ(i));
+      }
+      for (let i = 0; i < idxAttr.count; i++) {
+        bucket.idx.push(base + idxAttr.getX(i));
+      }
+    }
+
+    const primitives = [];
+    for (const [matIndex, bucket] of byMat.entries()) {
+      const posArr = new Float32Array(bucket.pos);
+      const normArr = new Float32Array(bucket.norm);
+      const vCount = posArr.length / 3;
+      const idxArr = vCount > 65535 ? new Uint32Array(bucket.idx) : new Uint16Array(bucket.idx);
       const idxCompType = idxArr instanceof Uint32Array ? 5125 : 5123;
 
       const min = [Infinity, Infinity, Infinity];
@@ -412,20 +531,17 @@ async function buildAvatarGLB() {
 
       const posBV = pushBytes(new Uint8Array(posArr.buffer), 34962);
       const normBV = pushBytes(new Uint8Array(normArr.buffer), 34962);
-      const uvBV = pushBytes(new Uint8Array(uvArr.buffer), 34962);
       const idxBV = pushBytes(new Uint8Array(idxArr.buffer), 34963);
 
       const posAcc = accessors.length;
-      accessors.push({ bufferView: posBV, componentType: 5126, count: posArr.length / 3, type: 'VEC3', min, max });
+      accessors.push({ bufferView: posBV, componentType: 5126, count: vCount, type: 'VEC3', min, max });
       const normAcc = accessors.length;
-      accessors.push({ bufferView: normBV, componentType: 5126, count: normArr.length / 3, type: 'VEC3' });
-      const uvAcc = accessors.length;
-      accessors.push({ bufferView: uvBV, componentType: 5126, count: uvArr.length / 2, type: 'VEC2' });
+      accessors.push({ bufferView: normBV, componentType: 5126, count: vCount, type: 'VEC3' });
       const idxAcc = accessors.length;
       accessors.push({ bufferView: idxBV, componentType: idxCompType, count: idxArr.length, type: 'SCALAR' });
 
       primitives.push({
-        attributes: { POSITION: posAcc, NORMAL: normAcc, TEXCOORD_0: uvAcc },
+        attributes: { POSITION: posAcc, NORMAL: normAcc },
         indices: idxAcc,
         material: matIndex,
       });
@@ -435,200 +551,193 @@ async function buildAvatarGLB() {
     return idx;
   }
 
-  // --- Lower Body: Articulated Hips + Separate Legs ---
-  const hipsMesh = buildMeshFromParts('Hips', [
-    [transformGeom(createDenimPelvis(), { ty: 0.85 }), 8],
-  ]);
+  // --- 1. Lower Body: Denim Hips & Wide-Leg Jeans + Brown Birkenstock Sandals ---
+  const hipsMesh = buildMeshFromParts('Hips', createDenimPelvisParts());
 
   function buildLegMesh(name, side) {
     const legParts = [
-      // Denim leg with tiled denim texture
-      [transformGeom(createDenimLeg(), { ty: -0.74 }), 8],
-      // Rolled lighter cuff at ankle
-      [transformGeom(new THREE.TorusGeometry(0.068, 0.015, 12, 24), { rx: Math.PI / 2, ty: -0.725 }), 9],
-      // Ankle skin
-      [transformGeom(createTaperedCylinder(0.040, 0.036, 0.10, 18), { ty: -0.77 }), 0],
-      // Sculpted bare foot + toes
-      [transformGeom(new THREE.SphereGeometry(0.044, 18, 14), { sx: 0.92, sy: 0.55, sz: 1.72, ty: -0.814, tz: 0.04 }), 0],
-      // Birkenstock cork sole footbed
-      [transformGeom(new THREE.CylinderGeometry(0.052, 0.048, 0.024, 20), { sx: 0.98, sz: 1.92, ty: -0.836, tz: 0.042 }), 11],
-      // Double brown leather straps
-      [transformGeom(new THREE.TorusGeometry(0.046, 0.011, 10, 20, Math.PI), { ty: -0.816, tz: 0.068 }), 10],
-      [transformGeom(new THREE.TorusGeometry(0.048, 0.011, 10, 20, Math.PI), { ty: -0.808, tz: 0.015 }), 10],
-      // Gold buckles
-      [transformGeom(new THREE.SphereGeometry(0.009, 10, 8), { tx: side * 0.044, ty: -0.806, tz: 0.068 }), 12],
-      [transformGeom(new THREE.SphereGeometry(0.009, 10, 8), { tx: side * 0.046, ty: -0.800, tz: 0.015 }), 12],
+      ...createDenimLegParts(),
+      [transformGeom(new THREE.TorusGeometry(0.070, 0.013, 10, 24), { rx: Math.PI / 2, ty: -0.715 }), 18],
+      [transformGeom(createTaperedCylinder(0.038, 0.034, 0.10, 18), { ty: -0.77 }), 0],
+      [transformGeom(new THREE.SphereGeometry(0.042, 18, 14), { sx: 0.90, sy: 0.52, sz: 1.70, ty: -0.814, tz: 0.038 }), 0],
+      [transformGeom(new THREE.CylinderGeometry(0.050, 0.047, 0.024, 20), { sx: 0.96, sz: 1.90, ty: -0.836, tz: 0.040 }), 20],
+      [transformGeom(new THREE.TorusGeometry(0.044, 0.011, 10, 20, Math.PI), { ty: -0.816, tz: 0.065 }), 19],
+      [transformGeom(new THREE.TorusGeometry(0.046, 0.011, 10, 20, Math.PI), { ty: -0.808, tz: 0.014 }), 19],
+      [transformGeom(new THREE.SphereGeometry(0.0085, 10, 8), { tx: side * 0.042, ty: -0.806, tz: 0.065 }), 21],
+      [transformGeom(new THREE.SphereGeometry(0.0085, 10, 8), { tx: side * 0.044, ty: -0.800, tz: 0.014 }), 21],
     ];
     return buildMeshFromParts(name, legParts);
   }
   const legRightMesh = buildLegMesh('LegRight', -1);
   const legLeftMesh = buildLegMesh('LegLeft', 1);
 
-  // --- Upper Torso: Caramel Tan Plaid Flannel Shirt ---
+  // --- 2. Upper Torso: Geometry-Baked Woven Plaid Button-Up Shirt ---
   const torsoParts = [
-    // Torso with 4.5x3.5 tiled plaid flannel pattern
-    [createShirtTorso(), 7],
-    // V-neck skin chest
-    [transformGeom(new THREE.SphereGeometry(0.062, 20, 14), { sx: 1.05, sy: 0.85, sz: 0.72, ty: 0.375, tz: 0.048 }), 0],
-    // Folded shirt collar lapels with plaid texture
-    [createTaperedRibbon([[0.0, 0.415, 0.045], [-0.048, 0.395, 0.078], [-0.068, 0.345, 0.095], [-0.020, 0.305, 0.115]], { segs: 14, radialSegs: 10, rx0: 0.022, rx1: 0.012, ry0: 0.008, ry1: 0.006, uTile: 2, vTile: 2 }), 7],
-    [createTaperedRibbon([[0.0, 0.415, 0.045], [0.048, 0.395, 0.078], [0.068, 0.345, 0.095], [0.020, 0.305, 0.115]], { segs: 14, radialSegs: 10, rx0: 0.022, rx1: 0.012, ry0: 0.008, ry1: 0.006, uTile: 2, vTile: 2 }), 7],
-    // Collar back rim
-    [transformGeom(new THREE.TorusGeometry(0.066, 0.014, 10, 24, Math.PI * 1.15), { rx: Math.PI / 2, ry: Math.PI, tz: -0.008, ty: 0.415 }), 7],
-    // Front placket strip
-    [transformGeom(new THREE.CylinderGeometry(0.014, 0.014, 0.33, 12), { sx: 1.2, sz: 0.4, ty: 0.145, tz: 0.11, uTile: 1, vTile: 3 }), 7],
+    ...createPlaidTorsoParts(),
+    // Crisp folded V-neck shirt collar flaps (left & right) in tan & cocoa plaid
+    [transformGeom(new THREE.BoxGeometry(0.046, 0.014, 0.065), { rx: 0.35, ry: -0.42, rz: -0.32, tx: -0.052, ty: 0.390, tz: 0.075 }), 10],
+    [transformGeom(new THREE.BoxGeometry(0.046, 0.014, 0.065), { rx: 0.35, ry: 0.42, rz: 0.32, tx: 0.052, ty: 0.390, tz: 0.075 }), 10],
+    // Front center placket (stays strictly inside shirt torso from y=0.02 to y=0.30!)
+    [transformGeom(new THREE.BoxGeometry(0.018, 0.28, 0.006), { ty: 0.16, tz: 0.110 }), 13],
   ];
-  // Pearl shirt buttons down front
-  for (let b = 0; b < 4; b++) {
-    const by = 0.03 + b * 0.078;
-    const bz = b === 2 ? 0.128 : b === 1 ? 0.114 : 0.112;
-    torsoParts.push([transformGeom(new THREE.SphereGeometry(0.008, 12, 10), { sz: 0.5, ty: by, tz: bz }), 16]);
+  for (let b = 0; b < 3; b++) {
+    const by = 0.055 + b * 0.088;
+    const bz = b === 1 ? 0.120 : 0.114;
+    torsoParts.push([transformGeom(new THREE.SphereGeometry(0.0055, 10, 8), { sz: 0.5, ty: by, tz: bz }), 26]);
   }
-  // Pink & gold pin on left chest
-  torsoParts.push([transformGeom(new THREE.SphereGeometry(0.015, 14, 12), { sz: 0.45, tx: 0.075, ty: 0.275, tz: 0.116 }), 13]);
-  torsoParts.push([transformGeom(new THREE.TorusGeometry(0.017, 0.004, 8, 18), { tx: 0.075, ty: 0.275, tz: 0.116 }), 12]);
   const torsoMesh = buildMeshFromParts('PlaidTorso', torsoParts);
 
-  // --- Head, Natural Face & Voluminous Layered Hair ---
+  // --- 3. Head, Pretty Feminine Face & Voluminous Layered Dark-Brown Hair ---
   const headParts = [
-    // Neck
-    [transformGeom(createTaperedCylinder(0.047, 0.057, 0.14, 22), { ty: -0.145 }), 0],
-    // Sculpted feminine head (NO clown blush spheres!)
+    // Slender feminine neck connecting smoothly down into the V-neck shirt opening
+    [transformGeom(createTaperedCylinder(0.036, 0.043, 0.17, 22), { ty: -0.125, tz: -0.012 }), 0],
+    // Dainty gold necklace resting against upper chest in open V-neck
+    [transformGeom(new THREE.TorusGeometry(0.044, 0.0026, 8, 24), { rx: 0.58, ty: -0.155, tz: 0.022 }), 21],
+    [transformGeom(new THREE.CylinderGeometry(0.0048, 0.0048, 0.002, 12), { rx: Math.PI / 2, ty: -0.185, tz: 0.062 }), 21],
+    // Sculpted oval feminine face with dainty chin
     [createSculptedHead(), 0],
-    // Delicate sculpted ears
-    [transformGeom(new THREE.SphereGeometry(0.026, 16, 12), { sx: 0.48, sy: 1.12, sz: 0.78, tx: -0.136, ty: -0.018, tz: -0.008 }), 0],
-    [transformGeom(new THREE.SphereGeometry(0.026, 16, 12), { sx: 0.48, sy: 1.12, sz: 0.78, tx: 0.136, ty: -0.018, tz: -0.008 }), 0],
-    // Natural delicate nose bridge and soft tip
-    [transformGeom(new THREE.SphereGeometry(0.015, 16, 12), { sx: 0.82, sy: 0.75, sz: 1.05, ty: -0.022, tz: 0.160 }), 0],
-    [transformGeom(createTaperedCylinder(0.007, 0.011, 0.040, 14), { rx: -0.22, ty: 0.002, tz: 0.154 }), 0],
-    // Natural smiling rose lips with Cupid's bow
-    [createTaperedRibbon([[-0.030, -0.062, 0.142], [-0.013, -0.060, 0.154], [0, -0.062, 0.156], [0.013, -0.060, 0.154], [0.030, -0.062, 0.142]], { segs: 16, radialSegs: 8, rx0: 0.0065, rx1: 0.0065, ry0: 0.006, ry1: 0.006 }), 2],
-    [createTaperedRibbon([[-0.026, -0.068, 0.142], [0, -0.076, 0.155], [0.026, -0.068, 0.142]], { segs: 14, radialSegs: 8, rx0: 0.008, rx1: 0.008, ry0: 0.007, ry1: 0.007 }), 2],
+    // Delicate nose bridge & small feminine nose tip
+    [transformGeom(createTaperedCylinder(0.0045, 0.008, 0.032, 12), { rx: -0.16, ty: -0.002, tz: 0.115 }), 0],
+    [transformGeom(new THREE.SphereGeometry(0.0098, 14, 12), { sx: 0.85, sy: 0.75, sz: 0.90, ty: -0.017, tz: 0.121 }), 0],
+    // Warm, natural rose-berry smile (slightly wider with softly upturned corners)
+    [createTaperedRibbon([
+      [-0.028, -0.043, 0.098],
+      [-0.013, -0.045, 0.109],
+      [0.0,    -0.047, 0.111],
+      [0.013,  -0.045, 0.109],
+      [0.028,  -0.043, 0.098],
+    ], { segs: 16, radialSegs: 8, rx0: 0.0046, rx1: 0.0046, ry0: 0.0042, ry1: 0.0042 }), 2],
+    [createTaperedRibbon([
+      [-0.025, -0.046, 0.099],
+      [0.0,    -0.053, 0.110],
+      [0.025,  -0.046, 0.099],
+    ], { segs: 14, radialSegs: 8, rx0: 0.0058, rx1: 0.0058, ry0: 0.0050, ry1: 0.0050 }), 2],
   ];
 
-  // Natural Almond Eyes + Hazel-Brown Irises + Dark Pupils + Eyeliner + Arched Brows
+  // Expressive Almond Brown Eyes + Winged Upper Eyeliner + Natural Arched Dark Brows
   for (const s of [-1, 1]) {
-    const ex = s * 0.048;
-    const ey = 0.014;
-    const ez = 0.138;
-    // Almond sclera white
-    headParts.push([transformGeom(new THREE.SphereGeometry(0.024, 20, 14), { sx: 1.15, sy: 0.82, sz: 0.65, ry: s * 0.10, tx: ex, ty: ey, tz: ez }), 4]);
-    // Hazel-brown iris
-    headParts.push([transformGeom(new THREE.SphereGeometry(0.015, 18, 12), { sx: 0.95, sy: 0.95, sz: 0.35, tx: ex + s * 0.002, ty: ey, tz: ez + 0.013 }), 17]);
-    // Dark pupil
-    headParts.push([transformGeom(new THREE.SphereGeometry(0.0075, 12, 10), { sx: 1.0, sy: 1.0, sz: 0.3, tx: ex + s * 0.002, ty: ey, tz: ez + 0.0155 }), 5]);
-    // Catchlight twinkle
-    headParts.push([transformGeom(new THREE.SphereGeometry(0.0035, 8, 8), { tx: ex + s * 0.004, ty: ey + 0.005, tz: ez + 0.0165 }), 6]);
-    // Upper eyelid / eyeliner curve
+    const ex = s * 0.040;
+    const ey = 0.018;
+    const ez = 0.104;
+    // Almond white sclera
+    headParts.push([transformGeom(new THREE.SphereGeometry(0.0195, 20, 14), { sx: 1.24, sy: 0.72, sz: 0.42, rz: s * 0.05, ry: s * 0.18, tx: ex, ty: ey, tz: ez }), 6]);
+    // Large warm dark-brown iris
+    headParts.push([transformGeom(new THREE.SphereGeometry(0.0132, 18, 12), { sx: 0.98, sy: 0.98, sz: 0.32, ry: s * 0.18, tx: ex - s * 0.001, ty: ey + 0.001, tz: ez + 0.0065 }), 7]);
+    // Deep black pupil
+    headParts.push([transformGeom(new THREE.SphereGeometry(0.0072, 14, 10), { sx: 0.96, sy: 0.96, sz: 0.28, ry: s * 0.18, tx: ex - s * 0.001, ty: ey + 0.001, tz: ez + 0.0085 }), 8]);
+    // Eye catchlight twinkles
+    headParts.push([transformGeom(new THREE.SphereGeometry(0.0028, 8, 8), { tx: ex + s * 0.003, ty: ey + 0.0045, tz: ez + 0.010 }), 9]);
+    headParts.push([transformGeom(new THREE.SphereGeometry(0.0015, 8, 8), { tx: ex - s * 0.0035, ty: ey - 0.003, tz: ez + 0.010 }), 9]);
+    // Winged dark upper lash line
     headParts.push([createTaperedRibbon([
-      [ex - s * 0.022, ey - 0.002, ez + 0.010],
-      [ex, ey + 0.013, ez + 0.014],
-      [ex + s * 0.024, ey + 0.001, ez + 0.010],
-    ], { segs: 10, radialSegs: 6, rx0: 0.0035, rx1: 0.0035, ry0: 0.003, ry1: 0.003 }), 5]);
-    // Gracefully arched dark brown eyebrow
+      [ex - s * 0.021, ey - 0.001, ez + 0.002],
+      [ex - s * 0.007, ey + 0.010, ez + 0.008],
+      [ex + s * 0.011, ey + 0.010, ez + 0.006],
+      [ex + s * 0.025, ey + 0.003, ez - 0.001],
+    ], { segs: 12, radialSegs: 6, rx0: 0.0038, rx1: 0.0028, ry0: 0.0034, ry1: 0.0024 }), 8]);
+    // Natural gracefully arched dark-brown eyebrow
     headParts.push([createTaperedRibbon([
-      [ex - s * 0.022, ey + 0.028, ez + 0.006],
-      [ex, ey + 0.038, ez + 0.012],
-      [ex + s * 0.024, ey + 0.028, ez + 0.005],
-    ], { segs: 12, radialSegs: 8, rx0: 0.0055, rx1: 0.003, ry0: 0.004, ry1: 0.003 }), 3]);
+      [ex - s * 0.021, ey + 0.024, ez + 0.003],
+      [ex - s * 0.004, ey + 0.031, ez + 0.006],
+      [ex + s * 0.014, ey + 0.030, ez + 0.003],
+      [ex + s * 0.026, ey + 0.022, ez - 0.004],
+    ], { segs: 12, radialSegs: 8, rx0: 0.0048, rx1: 0.0024, ry0: 0.0036, ry1: 0.0022 }), 3]);
   }
 
-  // --- Voluminous Layered Hair (True to Fizza's Photo) ---
-  // Base hair cap covering crown, temples, and back
-  headParts.push([transformGeom(new THREE.SphereGeometry(0.158, 36, 28, 0, Math.PI * 2, 0, Math.PI * 0.65), { sx: 1.05, sy: 1.15, sz: 1.05, rx: -0.26, ty: 0.020, tz: -0.020, uTile: 2, vTile: 2 }), 3]);
-  headParts.push([transformGeom(new THREE.SphereGeometry(0.154, 30, 22), { sx: 1.03, sy: 1.08, sz: 1.05, ty: 0.028, tz: -0.025, uTile: 2, vTile: 2 }), 3]);
+  // --- Voluminous Layered Dark-Brown Hair ---
+  headParts.push([createSculptedHairCap(), 3]);
 
-  // Center-parted sweeping curtain bangs (framing forehead and temples)
+  // Sweeping Face-Framing Curtain Bangs & Lush Overlapping Chest Waves (Left & Right)
   for (const s of [-1, 1]) {
-    // Upper front wave sweeping gracefully across the hairline
+    // Top center-parted curtain wave meeting seamlessly at x=0 on top of forehead (no gap, no shadow band!)
     headParts.push([createTaperedRibbon([
-      [s * 0.006, 0.135, 0.108],
-      [s * 0.065, 0.118, 0.116],
-      [s * 0.125, 0.055, 0.098],
-      [s * 0.148, -0.055, 0.082],
-      [s * 0.136, -0.21, 0.100],
-      [s * 0.110, -0.38, 0.118],
-    ], { segs: 26, radialSegs: 10, rx0: 0.040, rx1: 0.014, ry0: 0.022, ry1: 0.009, uTile: 1, vTile: 3 }), 3]);
+      [s * 0.008, 0.144, 0.075],
+      [s * 0.045, 0.124, 0.096],
+      [s * 0.098, 0.065, 0.092],
+      [s * 0.116, -0.015, 0.078],
+      [s * 0.112, -0.120, 0.092],
+      [s * 0.095, -0.235, 0.116],
+      [s * 0.075, -0.340, 0.120],
+    ], { segs: 28, radialSegs: 12, rx0: 0.048, rx1: 0.024, ry0: 0.024, ry1: 0.012 }), 5]);
 
-    // Front shoulder cascade: lush thick lock cascading forward over her chest (prominent in photo!)
+    // Mid-layer thick brunette wave overlapping seamlessly with curtain wave
     headParts.push([createTaperedRibbon([
-      [s * 0.030, 0.148, 0.040],
-      [s * 0.115, 0.110, 0.048],
-      [s * 0.165, 0.00, 0.030],
-      [s * 0.175, -0.16, 0.050],
-      [s * 0.155, -0.32, 0.095],
-      [s * 0.130, -0.46, 0.112],
-    ], { segs: 28, radialSegs: 12, rx0: 0.048, rx1: 0.018, ry0: 0.025, ry1: 0.010, uTile: 1, vTile: 4 }), 3]);
+      [s * 0.012, 0.142, 0.055],
+      [s * 0.085, 0.112, 0.065],
+      [s * 0.128, 0.025, 0.055],
+      [s * 0.134, -0.09, 0.064],
+      [s * 0.122, -0.23, 0.096],
+      [s * 0.098, -0.37, 0.112],
+    ], { segs: 28, radialSegs: 12, rx0: 0.056, rx1: 0.028, ry0: 0.028, ry1: 0.015 }), 4]);
+
+    // Outer voluminous shoulder cascade
+    headParts.push([createTaperedRibbon([
+      [s * 0.032, 0.142, 0.010],
+      [s * 0.108, 0.096, 0.018],
+      [s * 0.144, -0.02, 0.018],
+      [s * 0.148, -0.16, 0.038],
+      [s * 0.134, -0.30, 0.074],
+      [s * 0.114, -0.40, 0.092],
+    ], { segs: 26, radialSegs: 10, rx0: 0.058, rx1: 0.028, ry0: 0.030, ry1: 0.016 }), 3]);
   }
 
-  // Lush Back Hair Waterfall (thick ribbons cascading down upper back)
-  for (let i = -3; i <= 3; i++) {
-    const xOff = i * 0.042;
-    const zCurve = -0.115 - (1 - Math.abs(i) / 4) * 0.038;
+  // Full Back Hair Waterfall
+  for (let i = -4; i <= 4; i++) {
+    const xOff = i * 0.034;
+    const zCurve = -0.105 - (1 - Math.abs(i) / 4.5) * 0.035;
+    const matIdx = Math.abs(i) % 2 === 0 ? 3 : 4;
     headParts.push([createTaperedRibbon([
-      [xOff * 0.65, 0.138, -0.055],
-      [xOff * 1.12, 0.03, zCurve],
-      [xOff * 1.22, -0.14, zCurve - 0.020],
-      [xOff * 1.12, -0.32, zCurve - 0.008],
-      [xOff * 0.92, -0.48 + Math.abs(i) * 0.02, zCurve + 0.018],
-    ], { segs: 24, radialSegs: 10, rx0: 0.050, rx1: 0.018, ry0: 0.024, ry1: 0.010, uTile: 1, vTile: 3 }), 3]);
+      [xOff * 0.60, 0.135, -0.045],
+      [xOff * 1.05, 0.03, zCurve],
+      [xOff * 1.15, -0.14, zCurve - 0.018],
+      [xOff * 1.08, -0.30, zCurve - 0.008],
+      [xOff * 0.92, -0.43 + Math.abs(i) * 0.015, zCurve + 0.012],
+    ], { segs: 22, radialSegs: 10, rx0: 0.054, rx1: 0.024, ry0: 0.028, ry1: 0.012 }), matIdx]);
   }
   const headMesh = buildMeshFromParts('HeadAndHair', headParts);
 
-  // --- Right Arm (Waving arm with rolled 3/4 plaid sleeve) ---
+  // --- 4. Right Arm (Rolled 3/4 Plaid Sleeve + Gold Wristwatch + Waving Hand) ---
   const armRightParts = [
-    // Shoulder in plaid
-    [transformGeom(new THREE.SphereGeometry(0.052, 18, 14), { sx: 1.0, sy: 0.95, sz: 0.92, tx: 0.015, ty: 0.0, uTile: 2, vTile: 2 }), 7],
-    // Rolled 3/4 plaid upper sleeve
-    [transformGeom(createTaperedCylinder(0.049, 0.045, 0.21, 20, 3.0, 2.5), { ty: -0.11 }), 7],
-    // Rolled sleeve cuff
-    [transformGeom(new THREE.TorusGeometry(0.046, 0.010, 10, 20), { rx: Math.PI / 2, ty: -0.215, uTile: 2, vTile: 1 }), 7],
-    // Bare forearm skin
-    [transformGeom(createTaperedCylinder(0.037, 0.029, 0.23, 18), { ty: -0.32 }), 0],
-    // Wrist & hand
-    [transformGeom(createHand(false), { ty: -0.46 }), 0],
+    [transformGeom(new THREE.SphereGeometry(0.050, 16, 14), { tx: 0.012, ty: 0.0 }), 10],
+    ...createPlaidSleeveParts({ ty: -0.105 }),
+    [transformGeom(new THREE.TorusGeometry(0.045, 0.010, 10, 20), { rx: Math.PI / 2, ty: -0.21 }), 14],
+    [transformGeom(createTaperedCylinder(0.035, 0.027, 0.22, 18), { ty: -0.315 }), 0],
+    [transformGeom(new THREE.TorusGeometry(0.029, 0.0045, 8, 18), { rx: Math.PI / 2, ty: -0.385 }), 21],
+    [transformGeom(new THREE.CylinderGeometry(0.014, 0.014, 0.007, 16), { rz: Math.PI / 2, tx: -0.029, ty: -0.385 }), 21],
+    [transformGeom(createHand(false), { ty: -0.45 }), 0],
   ];
   const armRightMesh = buildMeshFromParts('ArmRight', armRightParts);
 
-  // --- Left Arm (Bent holding Iced Latte Cup with Green Lid & Gold Watch!) ---
+  // --- 5. Left Arm (Rolled 3/4 Plaid Sleeve + Holding Multi-Layered Iced Latte Cup!) ---
   const armLeftParts = [
-    // Shoulder in plaid
-    [transformGeom(new THREE.SphereGeometry(0.052, 18, 14), { sx: 1.0, sy: 0.95, sz: 0.92, tx: -0.015, ty: 0.0, uTile: 2, vTile: 2 }), 7],
-    // Rolled 3/4 plaid upper sleeve
-    [transformGeom(createTaperedCylinder(0.049, 0.045, 0.21, 20, 3.0, 2.5), { rz: 0.22, rx: -0.22, tx: 0.025, ty: -0.105, tz: 0.025 }), 7],
-    // Rolled sleeve cuff near elbow
-    [transformGeom(new THREE.TorusGeometry(0.046, 0.010, 10, 20), { rx: Math.PI / 2 - 0.22, rz: 0.22, tx: 0.048, ty: -0.205, tz: 0.048, uTile: 2, vTile: 1 }), 7],
-    // Forearm bent forward holding cup
-    [transformGeom(createTaperedCylinder(0.036, 0.029, 0.22, 18), { rx: -1.18, rz: -0.38, tx: 0.012, ty: -0.242, tz: 0.135 }), 0],
-    // Gold wristwatch on left wrist (from photo!)
-    [transformGeom(new THREE.TorusGeometry(0.031, 0.005, 8, 18), { rx: -1.18, rz: -0.38, tx: -0.018, ty: -0.268, tz: 0.195 }), 12],
-    [transformGeom(new THREE.CylinderGeometry(0.015, 0.015, 0.007, 16), { rx: -1.18, rz: -0.38, tx: -0.032, ty: -0.272, tz: 0.200 }), 12],
-    // Left hand cradling cup
-    [transformGeom(createHand(true), { rx: -1.0, tx: -0.035, ty: -0.282, tz: 0.225 }), 0],
-    // Iced Latte Cup (with coffee gradient texture & green logo)
-    [transformGeom(createTaperedCylinder(0.042, 0.031, 0.125, 22), { tx: -0.042, ty: -0.258, tz: 0.245 }), 14],
-    // Signature green cup lid
-    [transformGeom(new THREE.CylinderGeometry(0.044, 0.044, 0.016, 22), { tx: -0.042, ty: -0.191, tz: 0.245 }), 15],
-    // White straw
-    [transformGeom(new THREE.CylinderGeometry(0.004, 0.004, 0.095, 10), { rz: 0.14, rx: -0.12, tx: -0.048, ty: -0.148, tz: 0.250 }), 16],
+    [transformGeom(new THREE.SphereGeometry(0.050, 16, 14), { tx: -0.012, ty: 0.0 }), 10],
+    ...createPlaidSleeveParts({ rz: 0.22, rx: -0.22, tx: 0.024, ty: -0.102, tz: 0.024 }),
+    [transformGeom(new THREE.TorusGeometry(0.045, 0.010, 10, 20), { rx: Math.PI / 2 - 0.22, rz: 0.22, tx: 0.046, ty: -0.202, tz: 0.046 }), 14],
+    [transformGeom(createTaperedCylinder(0.034, 0.027, 0.21, 18), { rx: -1.18, rz: -0.38, tx: 0.012, ty: -0.240, tz: 0.132 }), 0],
+    [transformGeom(createHand(true), { rx: -1.0, tx: -0.034, ty: -0.280, tz: 0.220 }), 0],
+    [transformGeom(createTaperedCylinder(0.042, 0.038, 0.040, 22), { tx: -0.042, ty: -0.218, tz: 0.242 }), 22],
+    [transformGeom(createTaperedCylinder(0.038, 0.034, 0.045, 22), { tx: -0.042, ty: -0.260, tz: 0.242 }), 23],
+    [transformGeom(createTaperedCylinder(0.034, 0.030, 0.040, 22), { tx: -0.042, ty: -0.302, tz: 0.242 }), 24],
+    [transformGeom(new THREE.CylinderGeometry(0.014, 0.014, 0.005, 16), { rx: Math.PI / 2, tx: -0.042, ty: -0.258, tz: 0.276 }), 25],
+    [transformGeom(new THREE.CylinderGeometry(0.044, 0.044, 0.016, 22), { tx: -0.042, ty: -0.192, tz: 0.242 }), 25],
+    [transformGeom(new THREE.CylinderGeometry(0.004, 0.004, 0.095, 10), { rz: 0.14, rx: -0.12, tx: -0.048, ty: -0.148, tz: 0.248 }), 26],
   ];
   const armLeftMesh = buildMeshFromParts('ArmLeftWithLatte', armLeftParts);
 
   // ---------------------------------------------------------------------------
-  // 4. Node Hierarchy & Animations
+  // 4. Node Hierarchy & Smooth Keyframed Animations (idle, walk, wave, talk)
   // ---------------------------------------------------------------------------
   const nodes = [
     { name: 'ChefFizzRoot', children: [1], translation: [0, 0, 0] },
     { name: 'Hips', mesh: hipsMesh, translation: [0, 0, 0], rotation: [0, 0, 0, 1], children: [2, 6, 7] },
     { name: 'PlaidTorso', mesh: torsoMesh, translation: [0, 0.89, 0], rotation: [0, 0, 0, 1], children: [3, 4, 5] },
-    { name: 'HeadAndHair', mesh: headMesh, translation: [0, 0.59, 0], rotation: [0, 0, 0, 1] },
-    { name: 'ArmRight', mesh: armRightMesh, translation: [-0.164, 0.355, 0], rotation: [0, 0, -0.12, 0.9928] },
-    { name: 'ArmLeftWithLatte', mesh: armLeftMesh, translation: [0.164, 0.355, 0], rotation: [0, 0, 0.06, 0.9982] },
-    { name: 'LegRight', mesh: legRightMesh, translation: [-0.095, 0.85, 0], rotation: [0, 0, 0, 1] },
-    { name: 'LegLeft', mesh: legLeftMesh, translation: [0.095, 0.85, 0], rotation: [0, 0, 0, 1] },
+    { name: 'HeadAndHair', mesh: headMesh, translation: [0, 0.56, 0], rotation: [0, 0, 0, 1] },
+    { name: 'ArmRight', mesh: armRightMesh, translation: [-0.158, 0.355, 0], rotation: [0, 0, -0.11, 0.9939] },
+    { name: 'ArmLeftWithLatte', mesh: armLeftMesh, translation: [0.158, 0.355, 0], rotation: [0, 0, 0.06, 0.9982] },
+    { name: 'LegRight', mesh: legRightMesh, translation: [-0.076, 0.85, 0], rotation: [0, 0, 0, 1] },
+    { name: 'LegLeft', mesh: legLeftMesh, translation: [0.076, 0.85, 0], rotation: [0, 0, 0, 1] },
   ];
 
-  // Helper to add animation clips
   function makeClip(name, duration, tracks) {
     const samplersList = [];
     const channelsList = [];
@@ -657,103 +766,99 @@ async function buildAvatarGLB() {
     return [q.x, q.y, q.z, q.w];
   };
 
-  // 1) Idle: gentle breathing, subtle head tilt, natural wrist pulse
   const idleClip = makeClip('idle', 3.0, [
     {
-      node: 2, path: 'translation', // Torso breathing
+      node: 2, path: 'translation',
       times: [0.0, 1.5, 3.0],
       values: [0, 0.89, 0,  0, 0.898, 0.003,  0, 0.89, 0],
     },
     {
-      node: 3, path: 'rotation', // Head subtle gentle tilt
+      node: 3, path: 'rotation',
       times: [0.0, 1.5, 3.0],
-      values: [...eulerToQuat(0, 0, 0.02), ...eulerToQuat(-0.02, 0.04, -0.015), ...eulerToQuat(0, 0, 0.02)],
+      values: [...eulerToQuat(0, 0, 0.025), ...eulerToQuat(-0.02, 0.045, -0.02), ...eulerToQuat(0, 0, 0.025)],
     },
     {
-      node: 4, path: 'rotation', // Right arm subtle sway
+      node: 4, path: 'rotation',
       times: [0.0, 1.5, 3.0],
-      values: [...eulerToQuat(0, 0, -0.12), ...eulerToQuat(0.03, 0, -0.16), ...eulerToQuat(0, 0, -0.12)],
+      values: [...eulerToQuat(0, 0, -0.11), ...eulerToQuat(0.03, 0, -0.15), ...eulerToQuat(0, 0, -0.11)],
     },
   ]);
 
-  // 2) Walk: natural rhythmic stride across the floor!
   const walkClip = makeClip('walk', 1.0, [
     {
-      node: 6, path: 'rotation', // LegRight swing
+      node: 6, path: 'rotation',
       times: [0.0, 0.25, 0.5, 0.75, 1.0],
       values: [
-        ...eulerToQuat(0.35, 0, 0),
+        ...eulerToQuat(0.34, 0, 0),
         ...eulerToQuat(0.0, 0, 0),
-        ...eulerToQuat(-0.35, 0, 0),
+        ...eulerToQuat(-0.34, 0, 0),
         ...eulerToQuat(0.0, 0, 0),
-        ...eulerToQuat(0.35, 0, 0),
+        ...eulerToQuat(0.34, 0, 0),
       ],
     },
     {
-      node: 7, path: 'rotation', // LegLeft swing (opposite phase)
+      node: 7, path: 'rotation',
       times: [0.0, 0.25, 0.5, 0.75, 1.0],
       values: [
-        ...eulerToQuat(-0.35, 0, 0),
+        ...eulerToQuat(-0.34, 0, 0),
         ...eulerToQuat(0.0, 0, 0),
-        ...eulerToQuat(0.35, 0, 0),
+        ...eulerToQuat(0.34, 0, 0),
         ...eulerToQuat(0.0, 0, 0),
-        ...eulerToQuat(-0.35, 0, 0),
+        ...eulerToQuat(-0.34, 0, 0),
       ],
     },
     {
-      node: 4, path: 'rotation', // ArmRight swing counter-balancing left leg
+      node: 4, path: 'rotation',
       times: [0.0, 0.5, 1.0],
       values: [
-        ...eulerToQuat(-0.25, 0, -0.12),
-        ...eulerToQuat(0.25, 0, -0.12),
-        ...eulerToQuat(-0.25, 0, -0.12),
+        ...eulerToQuat(-0.24, 0, -0.11),
+        ...eulerToQuat(0.24, 0, -0.11),
+        ...eulerToQuat(-0.24, 0, -0.11),
       ],
     },
     {
-      node: 1, path: 'translation', // Gentle hip bounce
+      node: 1, path: 'translation',
       times: [0.0, 0.25, 0.5, 0.75, 1.0],
-      values: [0, 0, 0,  0, 0.02, 0,  0, 0, 0,  0, 0.02, 0,  0, 0, 0],
+      values: [0, 0, 0,  0, 0.018, 0,  0, 0, 0,  0, 0.018, 0,  0, 0, 0],
     },
   ]);
 
-  // 3) Wave: enthusiastic friendly greeting
   const waveClip = makeClip('wave', 2.0, [
     {
-      node: 4, path: 'rotation', // ArmRight lifts & waves forearm
+      node: 4, path: 'rotation',
       times: [0.0, 0.35, 0.65, 0.95, 1.25, 1.6, 2.0],
       values: [
-        ...eulerToQuat(0, 0, -0.12),
+        ...eulerToQuat(0, 0, -0.11),
         ...eulerToQuat(0, 0, 2.15),
         ...eulerToQuat(0, 0.35, 2.45),
         ...eulerToQuat(0, -0.35, 2.05),
         ...eulerToQuat(0, 0.35, 2.45),
         ...eulerToQuat(0, 0, 1.8),
-        ...eulerToQuat(0, 0, -0.12),
+        ...eulerToQuat(0, 0, -0.11),
       ],
     },
     {
-      node: 3, path: 'rotation', // Head tilts enthusiastically
+      node: 3, path: 'rotation',
       times: [0.0, 0.5, 1.2, 2.0],
       values: [
         ...eulerToQuat(0, 0, 0),
-        ...eulerToQuat(-0.06, 0.12, -0.08),
-        ...eulerToQuat(-0.04, -0.06, 0.04),
+        ...eulerToQuat(-0.05, 0.10, -0.07),
+        ...eulerToQuat(-0.03, -0.05, 0.04),
         ...eulerToQuat(0, 0, 0),
       ],
     },
   ]);
 
-  // 4) Talk: conversational gestures
   const talkClip = makeClip('talk', 2.0, [
     {
       node: 3, path: 'rotation',
       times: [0.0, 0.35, 0.75, 1.15, 1.55, 2.0],
       values: [
         ...eulerToQuat(0, 0, 0),
-        ...eulerToQuat(0.08, 0.04, 0.02),
-        ...eulerToQuat(-0.04, -0.06, -0.02),
+        ...eulerToQuat(0.07, 0.04, 0.02),
+        ...eulerToQuat(-0.04, -0.05, -0.02),
         ...eulerToQuat(0.06, 0.02, 0.03),
-        ...eulerToQuat(-0.02, 0.05, -0.01),
+        ...eulerToQuat(-0.02, 0.04, -0.01),
         ...eulerToQuat(0, 0, 0),
       ],
     },
@@ -761,36 +866,29 @@ async function buildAvatarGLB() {
       node: 4, path: 'rotation',
       times: [0.0, 0.5, 1.0, 1.5, 2.0],
       values: [
-        ...eulerToQuat(0, 0, -0.12),
-        ...eulerToQuat(0.35, 0, -0.28),
-        ...eulerToQuat(0.15, 0.2, -0.22),
-        ...eulerToQuat(0.38, -0.1, -0.30),
-        ...eulerToQuat(0, 0, -0.12),
+        ...eulerToQuat(0, 0, -0.11),
+        ...eulerToQuat(0.35, 0, -0.26),
+        ...eulerToQuat(0.15, 0.18, -0.20),
+        ...eulerToQuat(0.36, -0.1, -0.28),
+        ...eulerToQuat(0, 0, -0.11),
       ],
     },
   ]);
 
-  const animations = [idleClip, walkClip, waveClip, talkClip];
-
-  // glTF JSON root
   const gltf = {
-    asset: { version: '2.0', generator: 'Antigravity Avatar Generator - Fizza Aman Edition' },
+    asset: { version: '2.0', generator: 'Fizza Aman Blender/GLTF Multi-Material Avatar Builder' },
     scene: 0,
     scenes: [{ name: 'Scene', nodes: [0] }],
     nodes,
     meshes,
-    materials,
-    textures,
-    images,
-    samplers,
+    materials: MATERIALS,
     accessors,
     bufferViews,
     buffers: [{ byteLength: byteOffset }],
-    animations,
+    animations: [idleClip, walkClip, waveClip, talkClip],
   };
 
-  const jsonText = JSON.stringify(gltf);
-  const jsonBuffer = Buffer.from(jsonText, 'utf8');
+  const jsonBuffer = Buffer.from(JSON.stringify(gltf), 'utf8');
   const jsonPad = (4 - (jsonBuffer.length % 4)) % 4;
   const jsonChunkLength = jsonBuffer.length + jsonPad;
 
@@ -826,7 +924,7 @@ async function buildAvatarGLB() {
   const finalGLB = Buffer.concat(outParts);
   mkdirSync('public/models', { recursive: true });
   writeFileSync('public/models/chef-fizz.glb', finalGLB);
-  console.log(`Generated sculpted public/models/chef-fizz.glb (${(finalGLB.length / 1024).toFixed(1)} KB) with tiled plaid/denim textures, natural face, and animations: idle, walk, wave, talk`);
+  console.log(`Generated 100% geometry-baked public/models/chef-fizz.glb (${(finalGLB.length / 1024).toFixed(1)} KB) with ${MATERIALS.length} linear-calibrated PBR materials`);
 }
 
 buildAvatarGLB().catch((err) => {

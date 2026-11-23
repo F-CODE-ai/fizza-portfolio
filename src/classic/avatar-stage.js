@@ -1,5 +1,5 @@
-// Hero 3D Avatar stage (Module 2): loads public/models/chef-fizz.glb into #avatar-canvas,
-// plays idle/wave/talk/nod animations, supports drag-to-rotate + mouse-follow (extra credit).
+// Hero 3D Avatar stage: loads public/models/chef-fizz.glb into #avatar-canvas,
+// plays idle/wave/talk/nod animations, supports drag-to-rotate + mouse-follow.
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { speakAvatarText, speakNextAvatarSentence, AVATAR_SENTENCES } from './voice.js';
@@ -67,7 +67,7 @@ export async function initAvatarStage() {
   let active = null;
 
   try {
-    const gltf = await new GLTFLoader().loadAsync('/models/chef-fizz.glb');
+    const gltf = await new GLTFLoader().loadAsync('/models/chef-fizz.glb?v=7');
     model = gltf.scene;
     scene.add(model);
     mixer = new THREE.AnimationMixer(model);
@@ -123,7 +123,7 @@ export async function initAvatarStage() {
     if (e.detail) play(String(e.detail));
   });
 
-  // Extra credit: Interactive 3D response to mouse movement + drag-to-spin + tap-to-speak on canvas
+  // Interactive 3D response to mouse movement + drag-to-spin + tap-to-speak on canvas
   let targetRotY = 0;
   let targetRotX = 0;
   let dragOffset = 0;

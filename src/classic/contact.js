@@ -1,4 +1,4 @@
-// Frontend Contact form handler (Module 5): fetches HMAC time-trap token,
+// Frontend Contact form handler: fetches HMAC time-trap token,
 // validates name/email/subject/message on the client, optionally attaches Turnstile,
 // posts to /api/contact, and displays accessible status messages using textContent only.
 export function initContactForm() {

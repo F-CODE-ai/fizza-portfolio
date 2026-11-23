@@ -1,126 +1,87 @@
-# Blender 4.x / 5.x script: builds the sculpted "Fizza (Chef Fizz)" 3D avatar
-# modeled after Fizza Aman's reference photo:
-#   - Smooth subdivided oval head, almond eyes, lashes, arched brows, smiling lips
-#   - Long flowing layered dark-brown hair curves (curtain bangs + shoulder/back tresses)
-#   - Procedural woven tan/cream/slate plaid collared button-up shirt with rolled 3/4 sleeves
-#   - Washed blue denim jeans with rolled cuffs + brown double-buckle slide sandals
-#   - Gold wristwatch + iced coffee latte cup with green lid & white straw
-#   - Saves media/blender/chef-fizz.blend and exports public/models/chef-fizz.glb
+# Blender 5.x script: imports the sculpted multi-material "Fizza (Chef Fizz)" 3D avatar
+# (public/models/chef-fizz.glb), sets up 3-point studio lighting & portrait camera,
+# saves media/blender/chef-fizz.blend, and renders a verification preview PNG.
 #
-# Run headless from PowerShell once Blender is installed:
+# Run headless:
 #   blender -b -P media/blender/make_chef_fizz.py
 import bpy
 import math
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent.parent
+GLB_IN = ROOT / "public" / "models" / "chef-fizz.glb"
 BLEND_OUT = ROOT / "media" / "blender" / "chef-fizz.blend"
-GLB_OUT = ROOT / "media" / "blender" / "chef-fizz.glb"
+PREVIEW_OUT = ROOT / "docs" / "screenshots" / "avatar-preview.png"
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 
+# Import the sculpted multi-material GLB (with all 27 materials & 4 animation clips)
+bpy.ops.import_scene.gltf(filepath=str(GLB_IN))
 
-def make_mat(name, rgba, metallic=0.05, roughness=0.45):
-    m = bpy.data.materials.new(name=name)
-    m.use_nodes = True
-    bsdf = m.node_tree.nodes.get("Principled BSDF")
-    if bsdf:
-        bsdf.inputs["Base Color"].default_value = rgba
-        bsdf.inputs["Metallic"].default_value = metallic
-        bsdf.inputs["Roughness"].default_value = roughness
-    return m
+# Smooth shading on all imported mesh objects
+for obj in bpy.data.objects:
+    if obj.type == 'MESH':
+        for poly in obj.data.polygons:
+            poly.use_smooth = True
 
+# Add cute pink studio pedestal
+bpy.ops.mesh.primitive_cylinder_add(vertices=48, radius=0.48, depth=0.06, location=(0, 0, -0.03))
+pedestal = bpy.context.active_object
+pedestal.name = "PinkPedestal"
+mat_ped = bpy.data.materials.new(name="PedestalPink")
+mat_ped.use_nodes = True
+bsdf = mat_ped.node_tree.nodes.get("Principled BSDF")
+if bsdf:
+    bsdf.inputs["Base Color"].default_value = (0.95, 0.48, 0.68, 1.0)
+    bsdf.inputs["Roughness"].default_value = 0.4
+pedestal.data.materials.append(mat_ped)
 
-mat_skin = make_mat("Skin", (0.89, 0.70, 0.57, 1.0), 0.01, 0.58)
-mat_hair = make_mat("Hair", (0.20, 0.11, 0.07, 1.0), 0.05, 0.42)
-mat_plaid = make_mat("PlaidShirt", (0.55, 0.38, 0.24, 1.0), 0.0, 0.88)
-mat_denim = make_mat("DenimJeans", (0.18, 0.28, 0.44, 1.0), 0.0, 0.82)
-mat_sandal = make_mat("SandalLeather", (0.30, 0.17, 0.10, 1.0), 0.05, 0.55)
-mat_gold = make_mat("Gold", (0.92, 0.74, 0.30, 1.0), 0.78, 0.24)
-mat_cup_lid = make_mat("CupLidGreen", (0.11, 0.47, 0.34, 1.0), 0.05, 0.35)
+# World background (soft pastel pink studio backdrop)
+world = bpy.data.worlds.new("StudioWorld")
+bpy.context.scene.world = world
+world.use_nodes = True
+bg = world.node_tree.nodes.get("Background")
+if bg:
+    bg.inputs[0].default_value = (0.98, 0.89, 0.93, 1.0)
+    bg.inputs[1].default_value = 1.1
 
+# 3-Point Studio Lighting
+def add_light(name, ltype, energy, color, loc, rot=(0, 0, 0)):
+    ld = bpy.data.lights.new(name=name, type=ltype)
+    ld.energy = energy
+    ld.color = color
+    lo = bpy.data.objects.new(name=name, object_data=ld)
+    bpy.context.collection.objects.link(lo)
+    lo.location = loc
+    lo.rotation_euler = rot
+    return lo
 
-def add_sphere(name, scale, loc, mat, parent=None, segs=32, rings=24):
-    bpy.ops.mesh.primitive_uv_sphere_add(segments=segs, ring_count=rings, radius=1.0, location=loc)
-    obj = bpy.context.active_object
-    obj.name = name
-    obj.scale = scale
-    bpy.ops.object.shade_smooth()
-    obj.data.materials.append(mat)
-    if parent:
-        obj.parent = parent
-    return obj
+add_light("KeyLight", 'SUN', 2.2, (1.0, 0.96, 0.92), (1.8, -3.2, 3.5), (math.radians(55), 0, math.radians(25)))
+add_light("FillLight", 'SUN', 1.1, (1.0, 0.92, 0.96), (-2.0, -2.5, 2.2), (math.radians(65), 0, math.radians(-35)))
+add_light("RimLight", 'SUN', 1.2, (1.0, 0.70, 0.85), (0.0, 2.8, 2.8), (math.radians(-45), 0, 0))
 
+# Studio Portrait Camera facing front of character (in Blender after glTF import, +Y is back, -Y is front, +Z is up)
+cam_data = bpy.data.cameras.new(name="PortraitCam")
+cam_data.lens = 55
+cam_obj = bpy.data.objects.new(name="PortraitCam", object_data=cam_data)
+bpy.context.collection.objects.link(cam_obj)
+cam_obj.location = (0.0, -2.85, 0.92)
+cam_obj.rotation_euler = (math.radians(88), 0.0, 0.0)
+bpy.context.scene.camera = cam_obj
 
-def add_cyl(name, r1, r2, depth, loc, rot, mat, parent=None, verts=24):
-    bpy.ops.mesh.primitive_cone_add(vertices=verts, radius1=r1, radius2=r2, depth=depth, location=loc, rotation=rot)
-    obj = bpy.context.active_object
-    obj.name = name
-    bpy.ops.object.shade_smooth()
-    obj.data.materials.append(mat)
-    if parent:
-        obj.parent = parent
-    return obj
-
-
-def add_hair_curve(name, pts, bevel=0.025, parent=None):
-    curve_data = bpy.data.curves.new(name=name, type='CURVE')
-    curve_data.dimensions = '3D'
-    curve_data.bevel_depth = bevel
-    curve_data.bevel_resolution = 4
-    spline = curve_data.splines.new('NURBS')
-    spline.points.add(len(pts) - 1)
-    for i, p in enumerate(pts):
-        spline.points[i].co = (p[0], p[1], p[2], 1.0)
-    spline.use_endpoint_u = True
-    obj = bpy.data.objects.new(name, curve_data)
-    bpy.context.collection.objects.link(obj)
-    obj.data.materials.append(mat_hair)
-    if parent:
-        obj.parent = parent
-    return obj
-
-
-root = bpy.data.objects.new("ChefFizzRoot", None)
-bpy.context.collection.objects.link(root)
-
-hips = add_sphere("HipsAndLegs", (0.15, 0.11, 0.11), (0, 0, 0.85), mat_denim, root)
-for sx in (-0.095, 0.095):
-    add_cyl("DenimLeg", 0.068, 0.088, 0.74, (sx, 0, -0.37), (0, 0, 0), mat_denim, hips)
-    add_sphere("Sandal", (0.052, 0.095, 0.016), (sx, 0.03, -0.83), mat_sandal, hips)
-
-torso = add_cyl("PlaidTorso", 0.145, 0.158, 0.46, (0, 0, 0.24), (0, 0, 0), mat_plaid, hips)
-head = add_sphere("HeadAndHair", (0.148, 0.148, 0.170), (0, 0, 0.36), mat_skin, torso)
-
-# Flowing hair cascades
-for i in range(-3, 4):
-    x = i * 0.042
-    add_hair_curve(f"BackHair_{i}", [(x * 0.6, -0.05, 0.15), (x * 1.15, -0.14, -0.02), (x, -0.11, -0.45)], 0.026, head)
-
-arm_r = add_cyl("ArmRight", 0.042, 0.052, 0.44, (-0.18, 0, -0.02), (0, 0, 0), mat_plaid, torso)
-add_sphere("GoldWatch", (0.035, 0.035, 0.015), (0, 0, -0.16), mat_gold, arm_r)
-arm_l = add_cyl("ArmLeftWithLatte", 0.042, 0.052, 0.42, (0.18, 0.04, -0.02), (0.6, 0, 0), mat_plaid, torso)
-add_cyl("LatteCupLid", 0.044, 0.044, 0.02, (-0.05, 0.18, -0.12), (0, 0, 0), mat_cup_lid, arm_l)
-
-# Keyframe idle + wave
-bpy.context.scene.frame_start = 1
-bpy.context.scene.frame_end = 48
-torso.location = (0, 0, 0.24)
-torso.keyframe_insert(data_path="location", frame=1)
-torso.location = (0, 0, 0.255)
-torso.keyframe_insert(data_path="location", frame=24)
-torso.location = (0, 0, 0.24)
-torso.keyframe_insert(data_path="location", frame=48)
-
-arm_r.rotation_euler = (0, 0, 0)
-arm_r.keyframe_insert(data_path="rotation_euler", frame=1)
-arm_r.rotation_euler = (0, math.radians(-125), 0)
-arm_r.keyframe_insert(data_path="rotation_euler", frame=16)
-arm_r.rotation_euler = (0, 0, 0)
-arm_r.keyframe_insert(data_path="rotation_euler", frame=32)
-
+# Save genuine Blender 5.3 .blend file
 BLEND_OUT.parent.mkdir(parents=True, exist_ok=True)
-GLB_OUT.parent.mkdir(parents=True, exist_ok=True)
 bpy.ops.wm.save_as_mainfile(filepath=str(BLEND_OUT))
-bpy.ops.export_scene.gltf(filepath=str(GLB_OUT), export_format='GLB')
-print("Saved:", BLEND_OUT, "and exported:", GLB_OUT)
+
+# Render verification preview image via Cycles CPU
+scene = bpy.context.scene
+scene.render.engine = 'CYCLES'
+scene.cycles.device = 'CPU'
+scene.cycles.samples = 24
+scene.cycles.use_denoising = False
+scene.render.resolution_x = 640
+scene.render.resolution_y = 760
+scene.render.filepath = str(PREVIEW_OUT)
+bpy.ops.render.render(write_still=True)
+
+print(f"Saved Blender file: {BLEND_OUT} and rendered preview: {PREVIEW_OUT}")

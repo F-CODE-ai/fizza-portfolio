@@ -1,4 +1,4 @@
-// Module 4 + P6-lite: RAG AI Twin Chatbot UI with clickable source citations,
+// RAG AI Twin Chatbot UI with clickable source citations,
 // prompt-injection / private-data screening, browser speechSynthesis (TTS),
 // and 3D avatar "talk" animation sync.
 import { KB_CHUNKS } from './kb-chunks.js';
